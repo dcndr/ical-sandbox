@@ -11,7 +11,6 @@ Development of a part of SchoolScout. The **Dynamic Timetable View** reads `.ics
 - [Git](https://git-scm.com/)
 - [GitHub CLI](https://cli.github.com/) (optional, but recommended)
 - An editor like [Visual Studio Code](https://code.visualstudio.com/) (optional, but recommended)
--
 
 ### Installation
 
