@@ -7,23 +7,39 @@
 </head>
 
 <body>
-    <h1>SchoolScout Dynamic Timetable View</h1>
-    <input type="file" id="fileInput" accept=".ics">
-    <button id="todayButton">Today's Events</button>
-    <button id="weekButton">Upcoming Week's Events</button>
-    <table>
-        <tr>
-            <th>class</th>
-            <th>teacher</th>
-            <th>room</th>
-            <th>room block</th>
-            <th>room number</th>
-            <th>period</th>
-            <th>start</th>
-            <th>end</th>
-        </tr>
-        <tbody id="events"></tbody>
-    </table>
+    <div class="text-center p-4">
+        <h1 class="text-2xl grid mb-4 text-violet-700">
+            <b class="text-4xl text-black">SchoolScout</b>
+            Dynamic Timetable View
+        </h1>
+        <input type="file" id="fileInput" accept=".ics"
+            class="file:rounded-full file:border-0 file:py-2 file:px-4 file:bg-violet-100 file:text-violet-700 file:font-semibold file:shadow-lg file:shadow-violet-300 file:cursor-pointer cursor-pointer hover:file:text-violet-100 hover:file:bg-violet-700 file:transition text-sm file:duration-300">
+        <div class="grid my-6 gap-4">
+            <button id="todayButton"
+                class="rounded-full bg-violet-100 py-2 text-sm px-4 text-violet-700 font-semibold shadow-lg shadow-violet-300 mx-auto hover:text-violet-100 hover:bg-violet-700 transition disabled:bg-gray-200 disabled:shadow-none disabled:text-gray-400 duration-300"
+                disabled="true">
+                Today's Events
+            </button>
+            <button id="weekButton"
+                class="rounded-full bg-violet-100 py-2 text-sm px-4 text-violet-700 font-semibold shadow-lg shadow-violet-300 mx-auto hover:text-violet-100 hover:bg-violet-700 transition disabled:bg-gray-200 disabled:shadow-none disabled:text-gray-400 duration-300"
+                disabled="true">
+                Upcoming Week's Events
+            </button>
+        </div>
+        <table class="opacity-0 transition duration-0 w-full shadow-xl">
+            <tr class="border-y bg-violet-100 border-y-violet-200 text-violet-700 text-semibold">
+                <th>class</th>
+                <th class="hidden">teacher</th>
+                <th>room</th>
+                <th class="hidden">room block</th>
+                <th class="hidden">room number</th>
+                <th>period</th>
+                <th class="hidden">start</th>
+                <th class="hidden">end</th>
+            </tr>
+            <tbody id="events"></tbody>
+        </table>
+    </div>
 </body>
 
 </html>
