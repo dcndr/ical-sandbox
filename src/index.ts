@@ -15,7 +15,7 @@ const eventToData = (event: ical.CalendarComponent): {
     start: string,
     end: string,
 } => {
-    const summaryRegex = /.+: ((Yr \d)|(Rec)) ([^(\n]+)./
+    const summaryRegex = /.+: ((Yr \d+)|(Rec)) ([^(\n]+)./
 
     const descriptionRegex = /Teacher:  (.+)\nPeriod: Period (.+)/
     const descriptionMatches = Array.from(
