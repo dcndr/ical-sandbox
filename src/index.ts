@@ -10,11 +10,7 @@ const events: JQuery<HTMLDivElement> = $('#events')
 const eventToData = (event: ical.CalendarComponent): {
     class: string,
     teacher: string,
-    room: {
-        block: string,
-        number: number | null,
-        toString: () => string,
-    }
+    room: string
     period: string,
     start: string,
     end: string,
@@ -26,7 +22,7 @@ const eventToData = (event: ical.CalendarComponent): {
         event.description!.match(descriptionRegex)!
     )
 
-    const locationRegex = /Room: (([a-zA-Z]+)\s?(\d+))/
+    const locationRegex = /Room: (.+)/
     const locationMatches = Array.from(
         event.location!.match(locationRegex)!
     )
@@ -36,13 +32,7 @@ const eventToData = (event: ical.CalendarComponent): {
             event.summary!.match(summaryRegex)!
         )[4],
         teacher: descriptionMatches[1],
-        room: {
-            block: locationMatches[2] === "Gymnasium" ? "" : locationMatches[2],
-            number: locationMatches[2] === "Gymnasium" ? null : parseInt(locationMatches[3]),
-            toString() {
-                return `${locationMatches[2]}${locationMatches[2] === "Gymnasium" ? " " : ""}${this.number ?? ""}`
-            },
-        },
+        room: locationMatches[1].startsWith("Gymnasium") ? "Gymnasium" : locationMatches[1],
         period: descriptionMatches[2],
         start: event.start!.toLocaleTimeString(),
         end: event.end!.toLocaleTimeString(),
@@ -57,19 +47,17 @@ todayButton.on("click", () => {
     file.text().then((data) => {
         const calendar = ical.parseICS(data)
         for (let uid in calendar) {
-            let event = calendar[uid]
+            const event = calendar[uid]
             if (event.type.toString() === "VEVENT" && event.start?.getDate() === new Date().getDate()) {
-                let classData = eventToData(event)
+                const classData = eventToData(event)
                 events.append($(`
-                    <tr class="border-y border-y-violet-200">
+                    <tr class="border-y border-y-violet-200 hover:bg-violet-100 transition duration-700">
                         <td>${classData.class}</td>
-                        <td class="hidden">${classData.teacher}</td>
+                        <td class="hidden md:table-cell">${classData.teacher}</td>
                         <td>${classData.room.toString()}</td>
-                        <td class="hidden">${classData.room.block}</td>
-                        <td class="hidden">${classData.room.number ?? ""}</td>
                         <td>${classData.period}</td>
-                        <td class="hidden">${classData.start}</td>
-                        <td class="hidden">${classData.end}</td>
+                        <td class="hidden sm:block">${classData.start}</td>
+                        <td class="hidden sm:block">${classData.end}</td>
                     </tr>
                 `))
             }
@@ -77,11 +65,6 @@ todayButton.on("click", () => {
     })
 })
 fileInput.on('change', () => {
-    if (fileInput.val()) {
-        todayButton.prop('disabled', false)
-        weekButton.prop('disabled', false)
-    } else {
-        todayButton.prop('disabled', true)
-        weekButton.prop('disabled', true)
-    }
+    todayButton.prop('disabled', !fileInput.val())
+    weekButton.prop('disabled', !fileInput.val())
 })
