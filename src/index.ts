@@ -1,4 +1,4 @@
-import $ from "jquery"
+import $, { type } from "jquery"
 import ical from "ical"
 import './index.css'
 
@@ -41,16 +41,16 @@ const eventToData = (event: ical.CalendarComponent): {
 todayButton.on("click", () => {
     if (!fileInput.val()) return
     const file: File = fileInput.prop('files')[0]
-    events.empty()
-    events.parent().removeClass("opacity-0 duration-0")
-    events.parent().addClass("duration-1000")
+    showTable()
     file.text().then((data) => {
         const calendar = ical.parseICS(data)
-        for (let uid in calendar) {
-            const event = calendar[uid]
-            if (event.type.toString() === "VEVENT" && event.start?.getDate() === new Date().getDate()) {
-                const classData = eventToData(event)
-                events.append($(`
+        const components = Object.entries(calendar)
+            .filter(entry => calendar[entry[0]].type.toString() === "VEVENT")
+            .map(entry => entry[1])
+        components.forEach((component) => {
+                if (component.type.toString() === "VEVENT" && component.start?.getDate() === new Date().getDate()) {
+                    const classData = eventToData(component)
+                    events.append($(`
                     <tr class="border-y border-y-violet-200 hover:bg-violet-100 transition duration-700">
                         <td>${classData.class}</td>
                         <td class="hidden md:table-cell">${classData.teacher}</td>
@@ -60,11 +60,16 @@ todayButton.on("click", () => {
                         <td class="hidden sm:block">${classData.end}</td>
                     </tr>
                 `))
-            }
-        }
+                }
+            })
     })
 })
 fileInput.on('change', () => {
     todayButton.prop('disabled', !fileInput.val())
     weekButton.prop('disabled', !fileInput.val())
 })
+function showTable() {
+    events.empty()
+    events.parent().removeClass("opacity-0 duration-0")
+    events.parent().addClass("duration-1000")
+}
