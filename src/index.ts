@@ -9,6 +9,8 @@ const eventsList: JQuery<HTMLDivElement> = $('#events')
 const fileInputFakeButton: JQuery<HTMLButtonElement> = $('#fileInputFakeButton')
 const todayHeader: JQuery<HTMLTableCellElement> = $('#todayHeader')
 const weekHeader: JQuery<HTMLTableCellElement> = $('#weekHeader')
+let events: CalendarComponent[]
+let filename: string | number | string[]
 enum Mode { None, Today, Week }
 let mode = Mode.None;
 
@@ -50,25 +52,24 @@ const getFileName = (path: string | number | string[]): string => {
     return (path as string).match(fileRegex)![1]
 }
 fileInput.on('change', () => {
+    fileInput.prop('files')[0].text().then((data: string) => {
+        events = dataToEvents(data)
+    })
+    filename = getFileName(fileInput.val()!)
     todayButton.prop('disabled', false)
     weekButton.prop('disabled', false)
-    fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${getFileName(fileInput.val()!)}</code>`)
-    todayButton.trigger('click')
+    fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${filename}</code>`)
 })
 fileInputFakeButton.on('click', () => {
     fileInput.trigger('click')
 })
 todayButton.on('click', () => {
     mode = Mode.Today
-    fileInput.prop('files')[0].text().then((data: string): void => {
-        updateTable(getFileName(fileInput.val()!), dataToEvents(data).filter(event => event.type.toString() === 'VEVENT'))
-    })
+    update()
 })
 weekButton.on('click', () => {
     mode = Mode.Week
-    fileInput.prop('files')[0].text().then((data: string): void => {
-        updateTable(getFileName(fileInput.val()!), dataToEvents(data).filter(event => event.type.toString() === 'VEVENT'))
-    })
+    update()
 })
 const showTable = () => {
     eventsList.empty()
@@ -76,19 +77,25 @@ const showTable = () => {
     eventsList.parent().addClass('duration-1000')
 }
 const updateButtons = () => {
-    const style = 'shadow-inner'
+    const styles = ['shadow-inner', 'shadow-md']
     switch (mode) {
         case Mode.None:
-            todayButton.removeClass(style)
-            weekButton.removeClass(style)
+            todayButton.removeClass(styles[0])
+            weekButton.removeClass(styles[0])
+            todayButton.addClass(styles[1])
+            weekButton.addClass(styles[1])
             break
         case Mode.Today:
-            todayButton.addClass(style)
-            weekButton.removeClass(style)
+            todayButton.addClass(styles[0])
+            weekButton.removeClass(styles[0])
+            todayButton.removeClass(styles[1])
+            weekButton.addClass(styles[1])
             break
         case Mode.Week:
-            todayButton.removeClass(style)
-            weekButton.addClass(style)
+            todayButton.removeClass(styles[0])
+            weekButton.addClass(styles[0])
+            todayButton.addClass(styles[1])
+            weekButton.removeClass(styles[1])
             break
     }
 }
@@ -124,7 +131,7 @@ const getWeekNumber = (date: Date) => {
     return weekNo;
 }
 
-const updateTable = (filename: string | number | string[], events: CalendarComponent[]) => {
+const update = () => {
     updateButtons()
     updateHeaders()
     showTable()
@@ -135,7 +142,7 @@ const updateTable = (filename: string | number | string[], events: CalendarCompo
     if (localStorage.getItem('filename') !== filename) {
         localStorage.setItem('filename', filename as string)
     }
-    updateEvents(events)
+    updateTable(events)
 }
 const eventsToWeek = (events: ical.CalendarComponent[]) =>
     [...Array(8).keys()]
@@ -148,16 +155,16 @@ const eventsToWeek = (events: ical.CalendarComponent[]) =>
         `).join('')
 
 if (localStorage.getItem('events')) {
-    const events = JSON.parse(localStorage.getItem('events')!)
-    updateEvents(events)
+    events = JSON.parse(localStorage.getItem('events')!)
+    filename = localStorage.getItem('filename')!
     todayButton.prop('disabled', false)
     weekButton.prop('disabled', false)
-    fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${localStorage.getItem('filename')}</code>`)
+    fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${filename}</code>`)
     mode = Mode.Today
-    updateTable(localStorage.getItem('filename')!, events)
+    update()
 }
 
-function updateEvents(events: ical.CalendarComponent[]) {
+function updateTable(events: ical.CalendarComponent[]) {
     if (mode == Mode.Today) {
         events.forEach((event) => {
             if (event.type.toString() === 'VEVENT' && new Date(event.start!).getDate() === new Date().getDate()) {
