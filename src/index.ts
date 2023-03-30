@@ -155,11 +155,11 @@ const updateTable = () => {
     })
 }
 const eventsToWeek = (events: ical.CalendarComponent[]) =>
-    [...Array(9).keys()]
+    [...Array(8).keys()]
         .map(period => `
             <tr class='h-full border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
                 ${events
-                .filter(event => eventToClass(event).period === period.toString())
+                .filter(event => eventToClass(event).period === (period + 1).toString())
                 .map(event => `<td>${eventToClass(event).class}</td>`)}
             </tr>
         `).join('')
