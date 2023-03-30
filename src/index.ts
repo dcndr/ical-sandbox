@@ -41,15 +41,19 @@ const eventToClass = (event: ical.CalendarComponent): ClassRow => {
         teacher: descriptionMatches[1],
         room: locationMatches[1].startsWith('Gymnasium') ? 'Gymnasium' : locationMatches[1],
         period: descriptionMatches[2],
-        start: event.start!.toLocaleTimeString(),
-        end: event.end!.toLocaleTimeString(),
+        start: new Date(event.start!).toLocaleTimeString(),
+        end: new Date(event.end!).toLocaleTimeString(),
     }
+}
+const getFileName = (path: string | number | string[]): string => {
+    const fileRegex = /\\([^\\]+)$/
+    return (path as string).match(fileRegex)![1]
 }
 fileInput.on('change', () => {
     const fileRegex = /\\([^\\]+)$/
     todayButton.prop('disabled', !fileInput.val())
     weekButton.prop('disabled', !fileInput.val())
-    fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${(fileInput.val() as string).match(fileRegex)![1]}</code>`)
+    fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${getFileName(fileInput.val()!)}</code>`)
     todayButton.trigger('click')
 })
 fileInputFakeButton.on('click', () => {
@@ -125,6 +129,12 @@ const updateTable = () => {
     showTable()
     file.text().then((data) => {
         const events = dataToEvents(data).filter(event => event.type.toString() === 'VEVENT')
+        if (localStorage.getItem('events') !== JSON.stringify(events)) {
+            localStorage.setItem('events', JSON.stringify(events))
+        }
+        if (localStorage.getItem('filename') !== getFileName(fileInput.val()!)) {
+            localStorage.setItem('filename', getFileName(fileInput.val()!))
+        }
         if (mode == Mode.Today) {
             events.forEach((event) => {
                 if (event.type.toString() === 'VEVENT' && event.start?.getDate() === new Date().getDate()) {
@@ -163,3 +173,11 @@ const eventsToWeek = (events: ical.CalendarComponent[]) =>
                 .map(event => `<td>${eventToClass(event).class}</td>`)}
             </tr>
         `).join('')
+
+if (localStorage.getItem('events')) {
+    const events = JSON.parse(localStorage.getItem('events')!)
+    eventsList.append($(
+        eventsToWeek(events)
+    ))
+    fileInput.trigger('change')
+}
