@@ -1,5 +1,5 @@
 import $, { type } from 'jquery'
-import ical from 'ical'
+import ical, { CalendarComponent } from 'ical'
 import './index.css'
 
 const fileInput: JQuery<HTMLInputElement> = $('#fileInput')
@@ -38,8 +38,8 @@ const eventToClass = (event: ical.CalendarComponent): ClassRow => {
         class: Array.from(
             event.summary!.match(summaryRegex)!
         )[4],
-        teacher: descriptionMatches[1],
-        room: locationMatches[1].startsWith('Gymnasium') ? 'Gymnasium' : locationMatches[1],
+        teacher: descriptionMatches[1].replace(/\w\S*/g, word => word.charAt(0).toUpperCase() + word.substring(1).toLowerCase()),
+        room: locationMatches[1].startsWith('Gymnasium') ? 'Gym' : locationMatches[1],
         period: descriptionMatches[2],
         start: new Date(event.start!).toLocaleTimeString(),
         end: new Date(event.end!).toLocaleTimeString(),
@@ -50,9 +50,8 @@ const getFileName = (path: string | number | string[]): string => {
     return (path as string).match(fileRegex)![1]
 }
 fileInput.on('change', () => {
-    const fileRegex = /\\([^\\]+)$/
-    todayButton.prop('disabled', !fileInput.val())
-    weekButton.prop('disabled', !fileInput.val())
+    todayButton.prop('disabled', false)
+    weekButton.prop('disabled', false)
     fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${getFileName(fileInput.val()!)}</code>`)
     todayButton.trigger('click')
 })
@@ -61,11 +60,15 @@ fileInputFakeButton.on('click', () => {
 })
 todayButton.on('click', () => {
     mode = Mode.Today
-    updateTable()
+    fileInput.prop('files')[0].text().then((data: string): void => {
+        updateTable(getFileName(fileInput.val()!), dataToEvents(data).filter(event => event.type.toString() === 'VEVENT'))
+    })
 })
 weekButton.on('click', () => {
     mode = Mode.Week
-    updateTable()
+    fileInput.prop('files')[0].text().then((data: string): void => {
+        updateTable(getFileName(fileInput.val()!), dataToEvents(data).filter(event => event.type.toString() === 'VEVENT'))
+    })
 })
 const showTable = () => {
     eventsList.empty()
@@ -121,48 +124,18 @@ const getWeekNumber = (date: Date) => {
     return weekNo;
 }
 
-const updateTable = () => {
+const updateTable = (filename: string | number | string[], events: CalendarComponent[]) => {
     updateButtons()
     updateHeaders()
-    if (!fileInput.val()) return
-    const file: File = fileInput.prop('files')[0]
     showTable()
-    file.text().then((data) => {
-        const events = dataToEvents(data).filter(event => event.type.toString() === 'VEVENT')
-        if (localStorage.getItem('events') !== JSON.stringify(events)) {
-            localStorage.setItem('events', JSON.stringify(events))
-        }
-        if (localStorage.getItem('filename') !== getFileName(fileInput.val()!)) {
-            localStorage.setItem('filename', getFileName(fileInput.val()!))
-        }
-        if (mode == Mode.Today) {
-            events.forEach((event) => {
-                if (event.type.toString() === 'VEVENT' && event.start?.getDate() === new Date().getDate()) {
-                    const classRow = eventToClass(event)
-                    eventsList.append($(
-                        `
-                            <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
-                                <td>${classRow.class}</td>
-                                <td class='hidden md:table-cell'>
-                                    ${classRow.teacher.replace(/\w\S*/g, word => word.charAt(0).toUpperCase() + word.substring(1).toLowerCase())}
-                                </td>
-                                <td>${classRow.room.toString()}</td>
-                                <td>${classRow.period}</td>
-                                <td class='hidden sm:block'>${classRow.start}</td>
-                                <td class='hidden sm:block'>${classRow.end}</td>
-                            </tr>
-                        `
-                    ))
-                }
-            })
-        }
-        else {
-            const week = eventsToWeek(events.filter(event => getWeekNumber(event.start!) === getWeekNumber(new Date())))
-            eventsList.append($(
-                week
-            ))
-        }
-    })
+
+    if (localStorage.getItem('events') !== JSON.stringify(events)) {
+        localStorage.setItem('events', JSON.stringify(events))
+    }
+    if (localStorage.getItem('filename') !== filename) {
+        localStorage.setItem('filename', filename as string)
+    }
+    updateEvents(events)
 }
 const eventsToWeek = (events: ical.CalendarComponent[]) =>
     [...Array(8).keys()]
@@ -176,8 +149,40 @@ const eventsToWeek = (events: ical.CalendarComponent[]) =>
 
 if (localStorage.getItem('events')) {
     const events = JSON.parse(localStorage.getItem('events')!)
-    eventsList.append($(
-        eventsToWeek(events)
-    ))
-    fileInput.trigger('change')
+    updateEvents(events)
+    todayButton.prop('disabled', false)
+    weekButton.prop('disabled', false)
+    fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${localStorage.getItem('filename')}</code>`)
+    mode = Mode.Today
+    updateTable(localStorage.getItem('filename')!, events)
+}
+
+function updateEvents(events: ical.CalendarComponent[]) {
+    if (mode == Mode.Today) {
+        events.forEach((event) => {
+            if (event.type.toString() === 'VEVENT' && new Date(event.start!).getDate() === new Date().getDate()) {
+                const classRow = eventToClass(event)
+                eventsList.append($(
+                    `
+                        <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
+                            <td>${classRow.class}</td>
+                            <td class='hidden md:table-cell'>
+                                ${classRow.teacher}
+                            </td>
+                            <td>${classRow.room.toString()}</td>
+                            <td>${classRow.period}</td>
+                            <td class='hidden sm:block'>${classRow.start}</td>
+                            <td class='hidden sm:block'>${classRow.end}</td>
+                        </tr>
+                    `
+                ))
+            }
+        })
+    }
+    else {
+        const week = eventsToWeek(events.filter(event => getWeekNumber(new Date(event.start!)) === getWeekNumber(new Date())))
+        eventsList.append($(
+            week
+        ))
+    }
 }
