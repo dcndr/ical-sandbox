@@ -49,7 +49,7 @@ fileInput.on('change', () => {
     const fileRegex = /\\([^\\]+)$/
     todayButton.prop('disabled', !fileInput.val())
     weekButton.prop('disabled', !fileInput.val())
-    fileInputFakeButton.html(`Selected file: <code>${(fileInput.val() as string).match(fileRegex)![1]}</code>`)
+    fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${(fileInput.val() as string).match(fileRegex)![1]}</code>`)
     todayButton.trigger('click')
 })
 fileInputFakeButton.on('click', () => {
@@ -69,7 +69,7 @@ const showTable = () => {
     eventsList.parent().addClass('duration-1000')
 }
 const updateButtons = () => {
-    const style = 'shadow-md outline outline-1 -outline-offset-1 outline-violet-700'
+    const style = 'shadow-inner'
     switch (mode) {
         case Mode.None:
             todayButton.removeClass(style)

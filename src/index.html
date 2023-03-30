@@ -8,23 +8,23 @@
 
 <body>
     <div class="text-center p-4">
-        <h1 class="text-2xl grid mb-4 text-violet-700">
-            <b class="text-4xl text-black">SchoolScout</b>
+        <h1 class="text-2xl grid mb-4 text-violet-700 sm:text-3xl">
+            <b class="text-4xl text-black sm:text-5xl">SchoolScout</b>
             Dynamic Timetable View
         </h1>
         <input type="file" id="fileInput" accept=".ics"
             class="hidden">
-        <button id="fileInputFakeButton" class="rounded-full border-0 py-2 px-4 bg-violet-100 text-violet-700 font-semibold shadow-lg shadow-violet-300 cursor-pointer hover:text-violet-100 hover:bg-violet-700 transition text-sm duration-300">
-            Choose an <code>.ics</code> file
+        <button id="fileInputFakeButton" class="group rounded-full border-0 py-2 px-4 sm:py-4 sm:px-8 bg-violet-100 text-violet-700 font-semibold shadow-md shadow-violet-300 cursor-pointer hover:text-violet-100 hover:bg-violet-700 transition text-sm sm:text-xl duration-300">
+            Choose an <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">.ics</code> file
         </button>
-        <div class="grid my-6 gap-4 sm:block">
+        <div class="flex my-6 gap-4 flex-col sm:flex-row justify-center">
             <button id="todayButton"
-                class="rounded-full bg-violet-100 py-2 text-sm px-4 text-violet-700 font-semibold shadow-lg shadow-violet-300 mx-auto hover:text-violet-100 hover:bg-violet-700 transition disabled:bg-gray-200 disabled:shadow-none disabled:text-gray-400 duration-300"
+                class="rounded-full bg-violet-100 py-2 text-sm px-4 text-violet-700 font-semibold shadow-md shadow-violet-300 hover:text-violet-100 hover:bg-violet-700 transition disabled:bg-gray-200 disabled:text-gray-400 duration-300 sm:text-xl sm:px-6 sm:py-3 disabled:shadow-inner mx-auto sm:mx-0"
                 disabled="true">
                 Today's Events
             </button>
             <button id="weekButton"
-                class="rounded-full bg-violet-100 py-2 text-sm px-4 text-violet-700 font-semibold shadow-lg shadow-violet-300 mx-auto hover:text-violet-100 hover:bg-violet-700 transition disabled:bg-gray-200 disabled:shadow-none disabled:text-gray-400 duration-300"
+                class="rounded-full bg-violet-100 py-2 text-sm px-4 text-violet-700 font-semibold shadow-md shadow-violet-300 hover:text-violet-100 hover:bg-violet-700 transition disabled:bg-gray-200 disabled:text-gray-400 duration-300 sm:text-xl sm:px-6 sm:py-3 disabled:shadow-inner mx-auto sm:mx-0"
                 disabled="true">
                 Upcoming Week's Events
             </button>
@@ -40,11 +40,11 @@
                     <th class="hidden sm:block">End</th>
                 </tr>
                 <tr id="weekHeader" class="h-16 border-y bg-violet-100 border-y-violet-200 text-violet-700 text-semibold">
-                    <th>Monday</th>
-                    <th>Tuesday</th>
-                    <th>Wednesday</th>
-                    <th>Thursday</th>
-                    <th>Friday</th>
+                    <th>M<span class="hidden sm:inline">onday</span></th>
+                    <th>T<span class="hidden sm:inline">uesday</span></th>
+                    <th>W<span class="hidden sm:inline">ednesday</span></th>
+                    <th>T<span class="hidden sm:inline">hursday</span></th>
+                    <th>F<span class="hidden sm:inline">riday</span></th>
                 </tr>
             </tbody>
             <tbody id="events"></tbody>
