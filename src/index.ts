@@ -131,7 +131,7 @@ const updateTable = () => {
                     const classRow = eventToClass(event)
                     eventsList.append($(
                         `
-                            <tr class='h-full border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
+                            <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
                                 <td>${classRow.class}</td>
                                 <td class='hidden md:table-cell'>
                                     ${classRow.teacher.replace(/\w\S*/g, word => word.charAt(0).toUpperCase() + word.substring(1).toLowerCase())}
@@ -157,7 +157,7 @@ const updateTable = () => {
 const eventsToWeek = (events: ical.CalendarComponent[]) =>
     [...Array(8).keys()]
         .map(period => `
-            <tr class='h-full border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
+            <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
                 ${events
                 .filter(event => eventToClass(event).period === (period + 1).toString())
                 .map(event => `<td>${eventToClass(event).class}</td>`)}
