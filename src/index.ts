@@ -10,7 +10,7 @@ const fileInputFakeButton: JQuery<HTMLButtonElement> = $('#fileInputFakeButton')
 const todayHeader: JQuery<HTMLTableCellElement> = $('#todayHeader')
 const weekHeader: JQuery<HTMLTableCellElement> = $('#weekHeader')
 let events: CalendarComponent[]
-let filename: string | number | string[]
+let filename: string | number | string[] = ""
 enum Mode { None, Today, Week }
 let mode = Mode.None;
 
@@ -51,7 +51,7 @@ const getFileName = (path: string | number | string[]): string => {
     const fileRegex = /\\([^\\]+)$/
     return (path as string).match(fileRegex)![1]
 }
-fileInput.on('change', () => {
+fileInput.on('change', (): void => {
     fileInput.prop('files')[0].text().then((data: string) => {
         events = dataToEvents(data)
     })
@@ -60,23 +60,23 @@ fileInput.on('change', () => {
     weekButton.prop('disabled', false)
     fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${filename}</code>`)
 })
-fileInputFakeButton.on('click', () => {
+fileInputFakeButton.on('click', (): void => {
     fileInput.trigger('click')
 })
-todayButton.on('click', () => {
+todayButton.on('click', (): void => {
     mode = Mode.Today
     update()
 })
-weekButton.on('click', () => {
+weekButton.on('click', (): void => {
     mode = Mode.Week
     update()
 })
-const showTable = () => {
+const showTable = (): void => {
     eventsList.empty()
     eventsList.parent().removeClass('opacity-0 duration-0')
     eventsList.parent().addClass('duration-1000')
 }
-const updateButtons = () => {
+const updateButtons = (): void => {
     const styles = ['shadow-inner', 'shadow-md']
     switch (mode) {
         case Mode.None:
@@ -99,7 +99,7 @@ const updateButtons = () => {
             break
     }
 }
-const updateHeaders = () => {
+const updateHeaders = (): void => {
     switch (mode) {
         case Mode.None:
             todayHeader.hide()
@@ -115,7 +115,7 @@ const updateHeaders = () => {
             break
     }
 }
-const dataToEvents = (data: string) => {
+const dataToEvents = (data: string): CalendarComponent[] => {
     const calendar = ical.parseICS(data)
     const events = Object.entries(calendar)
         .filter(entry => calendar[entry[0]].type.toString() === 'VEVENT')
@@ -123,7 +123,7 @@ const dataToEvents = (data: string) => {
     return events
 }
 
-const getWeekNumber = (date: Date) => {
+const getWeekNumber = (date: Date): number => {
     date = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
     const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
@@ -131,7 +131,7 @@ const getWeekNumber = (date: Date) => {
     return weekNo;
 }
 
-const update = () => {
+const update = (): void => {
     updateButtons()
     updateHeaders()
     showTable()
@@ -142,9 +142,10 @@ const update = () => {
     if (localStorage.getItem('filename') !== filename) {
         localStorage.setItem('filename', filename as string)
     }
-    updateTable(events)
+    updateTable()
 }
-const eventsToWeek = (events: ical.CalendarComponent[]) =>
+
+const eventsToWeek = (events: ical.CalendarComponent[]): string =>
     [...Array(8).keys()]
         .map(period => `
             <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
@@ -154,34 +155,24 @@ const eventsToWeek = (events: ical.CalendarComponent[]) =>
             </tr>
         `).join('')
 
-if (localStorage.getItem('events')) {
-    events = JSON.parse(localStorage.getItem('events')!)
-    filename = localStorage.getItem('filename')!
-    todayButton.prop('disabled', false)
-    weekButton.prop('disabled', false)
-    fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${filename}</code>`)
-    mode = Mode.Today
-    update()
-}
 
-function updateTable(events: ical.CalendarComponent[]) {
+const updateTable = (): void => {
     if (mode == Mode.Today) {
         events.forEach((event) => {
-            if (event.type.toString() === 'VEVENT' && new Date(event.start!).getDate() === new Date().getDate()) {
+            if (event.type.toString() === 'VEVENT'
+                && new Date(event.start!).toLocaleDateString() === new Date().toLocaleDateString()) {
                 const classRow = eventToClass(event)
                 eventsList.append($(
                     `
-                        <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
-                            <td>${classRow.class}</td>
-                            <td class='hidden md:table-cell'>
-                                ${classRow.teacher}
-                            </td>
-                            <td>${classRow.room.toString()}</td>
-                            <td>${classRow.period}</td>
-                            <td class='hidden sm:block'>${classRow.start}</td>
-                            <td class='hidden sm:block'>${classRow.end}</td>
-                        </tr>
-                    `
+                    <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
+                        <td>${classRow.class}</td>
+                        <td class='hidden md:table-cell'>${classRow.teacher}</td>
+                        <td>${classRow.room.toString()}</td>
+                        <td>${classRow.period}</td>
+                        <td class='hidden sm:block'>${classRow.start}</td>
+                        <td class='hidden sm:block'>${classRow.end}</td>
+                    </tr>
+                            `
                 ))
             }
         })
@@ -192,4 +183,14 @@ function updateTable(events: ical.CalendarComponent[]) {
             week
         ))
     }
+}
+
+if (localStorage.getItem('events')) {
+    events = JSON.parse(localStorage.getItem('events')!)
+    filename = localStorage.getItem('filename')!
+    todayButton.prop('disabled', false)
+    weekButton.prop('disabled', false)
+    fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${filename}</code>`)
+    mode = Mode.Today
+    update()
 }
