@@ -37,13 +37,23 @@
         </div>
         <table class="opacity-0 transition duration-0 w-full shadow-xl table-fixed">
             <tbody>
-                <tr id="todayHeader" class="h-16 border-y bg-violet-100 border-y-violet-200 text-violet-700 text-semibold">
+                <tr id="todayHeader" class="h-16 border-y bg-violet-50 border-y-violet-200 text-violet-700 text-semibold">
                     <th>Class</th>
                     <th class="hidden md:table-cell">Teacher</th>
                     <th>Room</th>
                     <th>Period</th>
-                    <th class="hidden sm:block">Start</th>
-                    <th class="hidden sm:block">End</th>
+                    <th class='hidden sm:table-cell'>
+                        <table class="table-fixed inline-table w-1/2">
+                            <tbody>
+                                <tr class="border-b border-violet-200">
+                                    <td>Start</td>
+                                </tr>
+                                <tr class="border-t border-violet-200">
+                                    <td>End</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </th>
                 </tr>
                 <tr id="weekHeader" class="h-16 border-y bg-violet-100 border-y-violet-200 text-violet-700 text-semibold">
                     <th>M<span class="hidden sm:inline">onday</span></th>

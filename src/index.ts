@@ -58,7 +58,14 @@ fileInput.on('change', (): void => {
     filename = getFileName(fileInput.val()!)
     todayButton.prop('disabled', false)
     weekButton.prop('disabled', false)
-    fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${filename}</code>`)
+    fileInputFakeButton.html(
+        `
+            Selected file:
+            <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">
+                ${filename}
+            </code>
+        `
+    )
 })
 fileInputFakeButton.on('click', (): void => {
     fileInput.trigger('click')
@@ -164,24 +171,27 @@ const updateTable = (): void => {
                 const classRow = eventToClass(event)
                 eventsList.append($(
                     `
-                    <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
-                        <td>${classRow.class}</td>
-                        <td class='hidden md:table-cell'>${classRow.teacher}</td>
-                        <td>${classRow.room.toString()}</td>
-                        <td>${classRow.period}</td>
-                        <td class='hidden sm:block'>${classRow.start}</td>
-                        <td class='hidden sm:block'>${classRow.end}</td>
-                    </tr>
-                            `
+                        <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-50 transition duration-700'>
+                            <td>${classRow.class}</td>
+                            <td class='hidden md:table-cell'>${classRow.teacher}</td>
+                            <td>${classRow.room.toString()}</td>
+                            <td>${classRow.period}</td>
+                            <td class='hidden sm:table-cell'>
+                                <table class="table-fixed inline-table w-1/2">
+                                    <tbody>
+                                        <tr class="border-b border-violet-200"><td>${classRow.start}</td></tr>
+                                        <tr class="border-t border-violet-200"><td>${classRow.end}</td></tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    `
                 ))
             }
         })
     }
     else {
-        const week = eventsToWeek(events.filter(event => getWeekNumber(new Date(event.start!)) === getWeekNumber(new Date())))
-        eventsList.append($(
-            week
-        ))
+        eventsList.append($(eventsToWeek(events.filter(event => getWeekNumber(new Date(event.start!)) === getWeekNumber(new Date())))))
     }
 }
 
