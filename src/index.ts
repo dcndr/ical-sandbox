@@ -43,8 +43,8 @@ const eventToClass = (event: ical.CalendarComponent): ClassRow => {
         teacher: descriptionMatches[1].replace(/\w\S*/g, word => word.charAt(0).toUpperCase() + word.substring(1).toLowerCase()),
         room: locationMatches[1].startsWith('Gymnasium') ? 'Gym' : locationMatches[1],
         period: descriptionMatches[2],
-        start: new Date(event.start!).toLocaleTimeString(),
-        end: new Date(event.end!).toLocaleTimeString(),
+        start: new Date(event.start!).toLocaleTimeString([], { hour: 'numeric', minute: 'numeric' }),
+        end: new Date(event.end!).toLocaleTimeString([], { hour: 'numeric', minute: 'numeric' }),
     }
 }
 const getFileName = (path: string | number | string[]): string => {
