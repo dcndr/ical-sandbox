@@ -179,8 +179,8 @@ const updateTable = (): void => {
                             <td class='hidden sm:table-cell'>
                                 <table class="table-fixed inline-table w-1/2">
                                     <tbody>
-                                        <tr class="border-b border-violet-200"><td>${classRow.start}</td></tr>
-                                        <tr class="border-t border-violet-200"><td>${classRow.end}</td></tr>
+                                        <tr class="border-b-2 border-violet-200"><td>${classRow.start}</td></tr>
+                                        <tr class="border-t-2 border-violet-200"><td>${classRow.end}</td></tr>
                                     </tbody>
                                 </table>
                             </td>
