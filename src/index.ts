@@ -1,4 +1,4 @@
-import $, { type } from 'jquery'
+import $ from 'jquery'
 import ical, { CalendarComponent } from 'ical'
 import './index.css'
 
@@ -24,7 +24,7 @@ type ClassRow = {
 }
 
 const eventToClass = (event: ical.CalendarComponent): ClassRow => {
-    const summaryRegex = /.+: ((Yr \d+)|(Rec)) ([^(\n]+)./
+    const summaryRegex = /.+: ((((Yr \d+)|(Rec)) ([^(\n]+))|(\d+'s [a-zA-Z]+))./
 
     const descriptionRegex = /Teacher:  (.+)\nPeriod: Period (.+)/
     const descriptionMatches = Array.from(
@@ -36,10 +36,11 @@ const eventToClass = (event: ical.CalendarComponent): ClassRow => {
         event.location!.match(locationRegex)!
     )
 
+    const summaryMatches = Array.from(
+        event.summary!.match(summaryRegex)!
+    )
     return {
-        class: Array.from(
-            event.summary!.match(summaryRegex)!
-        )[4],
+        class: summaryMatches[7] || summaryMatches[6],
         teacher: descriptionMatches[1].replace(/\w\S*/g, word => word.charAt(0).toUpperCase() + word.substring(1).toLowerCase()),
         room: locationMatches[1].startsWith('Gymnasium') ? 'Gym' : locationMatches[1],
         period: descriptionMatches[2],
@@ -154,13 +155,20 @@ const update = (): void => {
 
 const eventsToWeek = (events: ical.CalendarComponent[]): string =>
     [...Array(8).keys()]
-        .map(period => `
-            <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
-                ${events
+        .map(period => {
+            const row = events
                 .filter(event => eventToClass(event).period === (period + 1).toString())
-                .map(event => `<td>${eventToClass(event).class}</td>`)}
-            </tr>
-        `).join('')
+                .map(event => `<td>${eventToClass(event).class}</td>`)
+            if (row.length < 5)
+                row.push(`<td class="blur">${Math.random().toString(36).slice(2)}</td>`)
+            return (
+                `
+                    <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
+                        ${row}
+                    </tr>
+                `
+            )
+        }).join('')
 
 
 const updateTable = (): void => {
