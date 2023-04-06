@@ -18,7 +18,8 @@
   "dependencies": {
     "@types/ical": "^0.8.0",
     "ical": "^0.8.0",
-    "jquery": "^3.6.4"
+    "jquery": "^3.6.4",
+    "pixi.js": "^7.2.3"
   },
   "scripts": {
     "start": "webpack s",
