@@ -13,6 +13,7 @@ let events: CalendarComponent[]
 let filename: string | number | string[] = ""
 enum Mode { None, Today, Week }
 let mode = Mode.None;
+const periods = [...Array(8).keys()].map(period => period + 1)
 
 type ClassRow = {
     class: string
@@ -154,10 +155,10 @@ const update = (): void => {
 }
 
 const eventsToWeek = (events: ical.CalendarComponent[]): string =>
-    [...Array(8).keys()]
+    periods
         .map(period => {
             const row = events
-                .filter(event => eventToClass(event).period === (period + 1).toString())
+                .filter(event => eventToClass(event).period === period.toString())
                 .map(event => `<td>${eventToClass(event).class}</td>`)
             if (row.length < 5)
                 row.push(`<td class="blur">${Math.random().toString(36).slice(2)}</td>`)
@@ -196,6 +197,20 @@ const updateTable = (): void => {
                     `
                 ))
             }
+            else return
+        })
+        periods.forEach(() => {
+            eventsList.append($(
+                `
+                <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-50 transition duration-700'>
+                    <td class="blur">${Math.random().toString(36).slice(2)}</td>
+                    <td class="blur">${Math.random().toString(36).slice(2)}</td>
+                    <td class="blur">${Math.random().toString(36).slice(2)}</td>
+                    <td class="blur">${Math.random().toString(36).slice(2)}</td>
+                    <td class="blur">${Math.random().toString(36).slice(2)}</td>
+                </tr>
+            `
+            ))
         })
     }
     else {
