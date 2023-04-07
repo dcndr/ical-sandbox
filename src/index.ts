@@ -131,7 +131,7 @@ const eventsToWeek = (events: ical.CalendarComponent[]): string =>
                 .filter(event => eventToClass(event).period === period.toString())
                 .map(event => `<td>${eventToClass(event).class}</td>`)
             if (row.length < 5)
-                row.push(`<td class="blur">${Math.random().toString(36).slice(2)}</td>`)
+                row.push(`<td class="blur select-none">${Math.random().toString(36).slice(2)}</td>`)
             return (
                 `
         <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
@@ -171,11 +171,11 @@ const updateTable = (): void => {
             eventsList.append($(
                 `
                 <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-50 transition duration-700'>
-                <td class="blur">${Math.random().toString(36).slice(2)}</td>
-                <td class="blur">${Math.random().toString(36).slice(2)}</td>
-                <td class="blur">${Math.random().toString(36).slice(2)}</td>
-                <td class="blur">${Math.random().toString(36).slice(2)}</td>
-                <td class="blur">${Math.random().toString(36).slice(2)}</td>
+                <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
+                <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
+                <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
+                <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
+                <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
                 </tr>
                 `
             ))
