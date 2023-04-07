@@ -1,7 +1,6 @@
-import $ from 'jquery'
+import $, { nodeName } from 'jquery'
 import ical, { CalendarComponent } from 'ical'
 import './index.css'
-import { Container, Graphics, LINE_CAP, LINE_JOIN, Point, autoDetectRenderer } from 'pixi.js'
 
 const fileInput: JQuery<HTMLInputElement> = $('#fileInput')
 const todayButton: JQuery<HTMLButtonElement> = $('#todayButton')
@@ -134,10 +133,10 @@ const eventsToWeek = (events: ical.CalendarComponent[]): string =>
                 row.push(`<td class="blur select-none">${Math.random().toString(36).slice(2)}</td>`)
             return (
                 `
-        <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
-        ${row}
-        </tr>
-        `
+                    <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
+                    ${row}
+                    </tr>
+                `
             )
         }).join('')
 const updateTable = (): void => {
@@ -148,38 +147,41 @@ const updateTable = (): void => {
                 const classRow = eventToClass(event)
                 eventsList.append($(
                     `
-                    <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-50 transition duration-700'>
-                    <td>${classRow.class}</td>
-                    <td class='hidden md:table-cell'>${classRow.teacher}</td>
-                    <td>${classRow.room.toString()}</td>
-                    <td>${classRow.period}</td>
-                    <td class='hidden sm:table-cell'>
-                    <table class="table-fixed inline-table w-1/2">
-                    <tbody>
-                    <tr class="border-b-2 border-violet-200"><td>${classRow.start}</td></tr>
-                    <tr class="border-t-2 border-violet-200"><td>${classRow.end}</td></tr>
-                    </tbody>
-                    </table>
-                    </td>
-                    </tr>
+                        <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-50 transition duration-700'>
+                            <td>${classRow.class}</td>
+                            <td class='hidden md:table-cell'>${classRow.teacher}</td>
+                            <td>${classRow.room.toString()}</td>
+                            <td>${classRow.period}</td>
+                            <td class='hidden sm:table-cell'>
+                            <table class="table-fixed inline-table w-1/2">
+                                <tbody>
+                                    <tr class="border-b-2 border-violet-200"><td>${classRow.start}</td></tr>
+                                    <tr class="border-t-2 border-violet-200"><td>${classRow.end}</td></tr>
+                                </tbody>
+                            </table>
+                            </td>
+                        </tr>
                     `
                 ))
             }
-            else return
+            else {
+                return
+            }
         })
         periods.forEach(() => {
             eventsList.append($(
                 `
-                <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-50 transition duration-700'>
-                <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
-                <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
-                <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
-                <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
-                <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
-                </tr>
+                    <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-50 transition duration-700'>
+                        <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
+                        <td class="blur select-none hidden md:table-cell">${Math.random().toString(36).slice(2)}</td>
+                        <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
+                        <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
+                        <td class="blur select-none hidden sm:table-cell">${Math.random().toString(36).slice(2)}</td>
+                    </tr>
                 `
             ))
         })
+
     }
     else {
         eventsList.append($(eventsToWeek(events.filter(event => getWeekNumber(new Date(event.start!)) === getWeekNumber(new Date())))))
@@ -223,51 +225,3 @@ if (localStorage.getItem('events')) {
     mode = Mode.Today
     update()
 }
-
-const canvas: JQuery<HTMLCanvasElement> = $("#canvas")
-const renderer = autoDetectRenderer(
-    {
-        width: canvas.width(),
-        height: canvas.height(),
-        view: canvas.get(0),
-        antialias: true,
-        backgroundAlpha: 0,
-        autoDensity: true,
-        resolution: window.devicePixelRatio || 1,
-    }
-)
-
-const stage = new Container()
-
-const radius = 150
-const tickLength = 20
-const lineStyle = {
-    width: 10,
-    color: 0x333333,
-    alignment: 0.5,
-    alpha: 1,
-    cap: LINE_CAP.ROUND,
-    join: LINE_JOIN.ROUND,
-}
-const ticks = 8
-
-const circle = new Graphics()
-    .lineStyle(lineStyle)
-    .drawCircle(
-        0,
-        0,
-        radius
-    )
-
-for (let i = 0; i < ticks; i++) {
-    circle.drawPolygon(
-        new Point(radius, 0),
-        new Point(radius - tickLength, 0),
-    )
-}
-
-circle.pivot = new Point(-renderer.width / 4, -renderer.height / 4)
-
-stage.addChild(circle)
-
-renderer.render(stage)

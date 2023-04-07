@@ -5,9 +5,13 @@ const webpack = require('webpack')
 
 module.exports = {
     entry: {
-        index: {
-            import: './src/index.ts',
-            dependOn: ['jquery', 'pixi'],
+        times: {
+            import: './src/times.ts',
+            dependOn: ['jquery'],
+        },
+        circle: {
+            import: './src/circle.ts',
+            dependOn: ['jquery', 'pixi']
         },
         jquery: 'jquery',
         pixi: 'pixi.js'
