@@ -7,9 +7,10 @@ module.exports = {
     entry: {
         index: {
             import: './src/index.ts',
-            dependOn: 'jquery',
+            dependOn: ['jquery', 'pixi'],
         },
         jquery: 'jquery',
+        pixi: 'pixi.js'
     },
     module: {
         rules: [

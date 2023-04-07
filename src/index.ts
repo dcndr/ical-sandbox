@@ -1,6 +1,7 @@
 import $ from 'jquery'
 import ical, { CalendarComponent } from 'ical'
 import './index.css'
+import { Container, Graphics, LINE_CAP, LINE_JOIN, Point, autoDetectRenderer } from 'pixi.js'
 
 const fileInput: JQuery<HTMLInputElement> = $('#fileInput')
 const todayButton: JQuery<HTMLButtonElement> = $('#todayButton')
@@ -23,7 +24,6 @@ type ClassRow = {
     start: string
     end: string
 }
-
 const eventToClass = (event: ical.CalendarComponent): ClassRow => {
     const summaryRegex = /.+: ((((Yr \d+)|(Rec)) ([^(\n]+))|(\d+'s [a-zA-Z]+))./
 
@@ -53,33 +53,6 @@ const getFileName = (path: string | number | string[]): string => {
     const fileRegex = /\\([^\\]+)$/
     return (path as string).match(fileRegex)![1]
 }
-fileInput.on('change', (): void => {
-    fileInput.prop('files')[0].text().then((data: string) => {
-        events = dataToEvents(data)
-    })
-    filename = getFileName(fileInput.val()!)
-    todayButton.prop('disabled', false)
-    weekButton.prop('disabled', false)
-    fileInputFakeButton.html(
-        `
-            Selected file:
-            <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">
-                ${filename}
-            </code>
-        `
-    )
-})
-fileInputFakeButton.on('click', (): void => {
-    fileInput.trigger('click')
-})
-todayButton.on('click', (): void => {
-    mode = Mode.Today
-    update()
-})
-weekButton.on('click', (): void => {
-    mode = Mode.Week
-    update()
-})
 const showTable = (): void => {
     eventsList.empty()
     eventsList.parent().removeClass('opacity-0 duration-0')
@@ -131,7 +104,6 @@ const dataToEvents = (data: string): CalendarComponent[] => {
         .map(entry => entry[1])
     return events
 }
-
 const getWeekNumber = (date: Date): number => {
     date = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
     date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
@@ -139,7 +111,6 @@ const getWeekNumber = (date: Date): number => {
     const weekNo = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
     return weekNo;
 }
-
 const update = (): void => {
     updateButtons()
     updateHeaders()
@@ -153,7 +124,6 @@ const update = (): void => {
     }
     updateTable()
 }
-
 const eventsToWeek = (events: ical.CalendarComponent[]): string =>
     periods
         .map(period => {
@@ -164,14 +134,12 @@ const eventsToWeek = (events: ical.CalendarComponent[]): string =>
                 row.push(`<td class="blur">${Math.random().toString(36).slice(2)}</td>`)
             return (
                 `
-                    <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
-                        ${row}
-                    </tr>
-                `
+        <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-100 transition duration-700'>
+        ${row}
+        </tr>
+        `
             )
         }).join('')
-
-
 const updateTable = (): void => {
     if (mode == Mode.Today) {
         events.forEach((event) => {
@@ -180,20 +148,20 @@ const updateTable = (): void => {
                 const classRow = eventToClass(event)
                 eventsList.append($(
                     `
-                        <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-50 transition duration-700'>
-                            <td>${classRow.class}</td>
-                            <td class='hidden md:table-cell'>${classRow.teacher}</td>
-                            <td>${classRow.room.toString()}</td>
-                            <td>${classRow.period}</td>
-                            <td class='hidden sm:table-cell'>
-                                <table class="table-fixed inline-table w-1/2">
-                                    <tbody>
-                                        <tr class="border-b-2 border-violet-200"><td>${classRow.start}</td></tr>
-                                        <tr class="border-t-2 border-violet-200"><td>${classRow.end}</td></tr>
-                                    </tbody>
-                                </table>
-                            </td>
-                        </tr>
+                    <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-50 transition duration-700'>
+                    <td>${classRow.class}</td>
+                    <td class='hidden md:table-cell'>${classRow.teacher}</td>
+                    <td>${classRow.room.toString()}</td>
+                    <td>${classRow.period}</td>
+                    <td class='hidden sm:table-cell'>
+                    <table class="table-fixed inline-table w-1/2">
+                    <tbody>
+                    <tr class="border-b-2 border-violet-200"><td>${classRow.start}</td></tr>
+                    <tr class="border-t-2 border-violet-200"><td>${classRow.end}</td></tr>
+                    </tbody>
+                    </table>
+                    </td>
+                    </tr>
                     `
                 ))
             }
@@ -203,13 +171,13 @@ const updateTable = (): void => {
             eventsList.append($(
                 `
                 <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-50 transition duration-700'>
-                    <td class="blur">${Math.random().toString(36).slice(2)}</td>
-                    <td class="blur">${Math.random().toString(36).slice(2)}</td>
-                    <td class="blur">${Math.random().toString(36).slice(2)}</td>
-                    <td class="blur">${Math.random().toString(36).slice(2)}</td>
-                    <td class="blur">${Math.random().toString(36).slice(2)}</td>
+                <td class="blur">${Math.random().toString(36).slice(2)}</td>
+                <td class="blur">${Math.random().toString(36).slice(2)}</td>
+                <td class="blur">${Math.random().toString(36).slice(2)}</td>
+                <td class="blur">${Math.random().toString(36).slice(2)}</td>
+                <td class="blur">${Math.random().toString(36).slice(2)}</td>
                 </tr>
-            `
+                `
             ))
         })
     }
@@ -217,6 +185,34 @@ const updateTable = (): void => {
         eventsList.append($(eventsToWeek(events.filter(event => getWeekNumber(new Date(event.start!)) === getWeekNumber(new Date())))))
     }
 }
+
+fileInput.on('change', (): void => {
+    fileInput.prop('files')[0].text().then((data: string) => {
+        events = dataToEvents(data)
+    })
+    filename = getFileName(fileInput.val()!)
+    todayButton.prop('disabled', false)
+    weekButton.prop('disabled', false)
+    fileInputFakeButton.html(
+        `
+        Selected file:
+        <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">
+        ${filename}
+        </code>
+        `
+    )
+})
+fileInputFakeButton.on('click', (): void => {
+    fileInput.trigger('click')
+})
+todayButton.on('click', (): void => {
+    mode = Mode.Today
+    update()
+})
+weekButton.on('click', (): void => {
+    mode = Mode.Week
+    update()
+})
 
 if (localStorage.getItem('events')) {
     events = JSON.parse(localStorage.getItem('events')!)
@@ -227,3 +223,51 @@ if (localStorage.getItem('events')) {
     mode = Mode.Today
     update()
 }
+
+const canvas: JQuery<HTMLCanvasElement> = $("#canvas")
+const renderer = autoDetectRenderer(
+    {
+        width: canvas.width(),
+        height: canvas.height(),
+        view: canvas.get(0),
+        antialias: true,
+        backgroundAlpha: 0,
+        autoDensity: true,
+        resolution: window.devicePixelRatio || 1,
+    }
+)
+
+const stage = new Container()
+
+const radius = 150
+const tickLength = 20
+const lineStyle = {
+    width: 10,
+    color: 0x333333,
+    alignment: 0.5,
+    alpha: 1,
+    cap: LINE_CAP.ROUND,
+    join: LINE_JOIN.ROUND,
+}
+const ticks = 8
+
+const circle = new Graphics()
+    .lineStyle(lineStyle)
+    .drawCircle(
+        0,
+        0,
+        radius
+    )
+
+for (let i = 0; i < ticks; i++) {
+    circle.drawPolygon(
+        new Point(radius, 0),
+        new Point(radius - tickLength, 0),
+    )
+}
+
+circle.pivot = new Point(-renderer.width / 4, -renderer.height / 4)
+
+stage.addChild(circle)
+
+renderer.render(stage)
