@@ -9,7 +9,7 @@ const eventsList: JQuery<HTMLDivElement> = $('#events')
 const fileInputFakeButton: JQuery<HTMLButtonElement> = $('#fileInputFakeButton')
 const todayHeader: JQuery<HTMLTableCellElement> = $('#todayHeader')
 const weekHeader: JQuery<HTMLTableCellElement> = $('#weekHeader')
-let events: CalendarComponent[]
+export let events: CalendarComponent[]
 let filename: string | number | string[] = ""
 enum Mode { None, Today, Week }
 let mode = Mode.None;
@@ -129,7 +129,7 @@ const eventsToWeek = (events: ical.CalendarComponent[]): string =>
             const row = events
                 .filter(event => eventToClass(event).period === period.toString())
                 .map(event => `<td>${eventToClass(event).class}</td>`)
-            if (row.length < 5)
+            while (row.length < 5)
                 row.push(`<td class="blur select-none">${Math.random().toString(36).slice(2)}</td>`)
             return (
                 `
@@ -140,7 +140,7 @@ const eventsToWeek = (events: ical.CalendarComponent[]): string =>
             )
         }).join('')
 const updateTable = (): void => {
-    if (mode == Mode.Today) {
+    if (mode === Mode.Today) {
         events.forEach((event) => {
             if (event.type.toString() === 'VEVENT'
                 && new Date(event.start!).toLocaleDateString() === new Date().toLocaleDateString()) {

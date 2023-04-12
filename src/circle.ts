@@ -1,7 +1,8 @@
 import { CalendarComponent } from 'ical'
 import $ from 'jquery'
-import { AsciiFilter, DotFilter } from 'pixi-filters'
-import { ColorMatrixFilter, Container, Graphics, LINE_CAP, LINE_JOIN, Point, Ticker, autoDetectRenderer } from 'pixi.js'
+import { BlurFilter, Container, Graphics, LINE_CAP, LINE_JOIN, Point, Ticker, autoDetectRenderer } from 'pixi.js'
+import { events } from './times'
+
 
 const canvas: JQuery<HTMLCanvasElement> = $("#canvas")
 const renderer = autoDetectRenderer(
@@ -27,7 +28,6 @@ const lineStyle = {
     cap: LINE_CAP.ROUND,
     join: LINE_JOIN.ROUND,
 }
-const ticks = 4
 const circle = new Graphics()
     .lineStyle(lineStyle)
     .drawCircle(
@@ -35,7 +35,7 @@ const circle = new Graphics()
         0,
         radius
     )
-const hand = new Graphics()
+const periodHand = new Graphics()
     .lineStyle(lineStyle)
     .drawPolygon(
         new Point(0, 0),
@@ -47,16 +47,16 @@ const drawTick = (angleDegrees: number): void => {
     const angle = (angleDegrees - 90) * Math.PI / 180
     circle.drawPolygon(
         new Point(Math.cos(angle) * radius, Math.sin(angle) * radius),
-        new Point(Math.cos(angle) * (radius - tickLength), Math.sin(angle) * (radius - tickLength)),
+        new Point(Math.cos(angle) * (radius + tickLength), Math.sin(angle) * (radius + tickLength)),
     )
 }
 const eventToAngles = (event: CalendarComponent) => {
     const start = new Date(event.start!)
     const end = new Date(event.end!)
-    const startMinutes = start.getHours() * 60 + start.getMinutes()
-    const endMinutes = end.getHours() * 60 + end.getMinutes()
-    const startAngle = Math.abs(520 - startMinutes) / Math.abs(906 - startMinutes) * 360
-    const endAngle = Math.abs(520 - endMinutes) / Math.abs(906 - endMinutes) * 360
+    const startMinutesSinceMidnight = start.getHours() * 60 + start.getMinutes()
+    const endMinutesSinceMidnight = end.getHours() * 60 + end.getMinutes()
+    const startAngle = Math.abs(520 - startMinutesSinceMidnight) / Math.abs(906 - startMinutesSinceMidnight) * 360
+    const endAngle = Math.abs(520 - endMinutesSinceMidnight) / Math.abs(906 - endMinutesSinceMidnight) * 360
     return {
         start: startAngle,
         end: endAngle,
@@ -65,9 +65,29 @@ const eventToAngles = (event: CalendarComponent) => {
 
 circle.pivot = new Point(-renderer.width / 4, -renderer.height / 4)
 stage.addChild(circle)
-circle.addChild(hand)
+circle.addChild(periodHand)
+
+const eventsToday = events
+    .filter(
+        event => event.type.toString() === 'VEVENT'
+            && new Date(event.start!).toLocaleDateString() === new Date().toLocaleDateString()
+    )
+if (eventsToday.length === 0) {
+    circle.filters = [new BlurFilter(50, 10)]
+    for (let i = 0; i < Math.random() * 2 + 10; i++) {
+        drawTick(Math.random() * 360)
+    }
+}
+else {
+    eventsToday
+        .forEach(event =>
+            drawTick(eventToAngles(event).start)
+        )
+}
+
 
 ticker.add((deltaTime) => {
     renderer.render(stage)
-    hand.angle += deltaTime
+    const minutesSinceMidnight = new Date().getHours() * 60 + new Date().getMinutes()
+    periodHand.angle = Math.abs(520 - minutesSinceMidnight) / Math.abs(906 - minutesSinceMidnight) * 360
 })
