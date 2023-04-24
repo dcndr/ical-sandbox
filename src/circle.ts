@@ -2,7 +2,12 @@ import { CalendarComponent } from 'ical'
 import $ from 'jquery'
 import { BlurFilter, Container, Graphics, LINE_CAP, LINE_JOIN, Point, Text, Ticker, autoDetectRenderer } from 'pixi.js'
 import { eventToClass, events } from './times'
+import Sinon from 'sinon'
 
+Sinon.useFakeTimers({
+    now: new Date(2023, 3, 27, 10, 0, 0),
+    shouldAdvanceTime: true,
+})
 const canvas: JQuery<HTMLCanvasElement> = $("#canvas")
 const renderer = autoDetectRenderer(
     {
@@ -50,6 +55,7 @@ const drawTick = (
         )
     })
     const container = new Container()
+    const innerContainer = new Container()
     const header = new Text(label.header, {
         fontFamily: 'system-ui',
         fontSize: 16,
@@ -71,13 +77,17 @@ const drawTick = (
     header.anchor.set(0.5, 1)
     text.anchor.set(0.5, 0)
     const average = anglesDegrees.reduce((previous, current) => previous + current) / anglesDegrees.length
-    header.position = text.position
+    innerContainer.position
         = new Point(0, -radius - 80)
 
     container.rotation = average + Math.PI / 2
 
-    container.addChild(header)
-    container.addChild(text)
+    innerContainer.rotation = container.rotation > Math.PI / 2 && container.rotation < Math.PI * 1.5 ? Math.PI : 0
+
+    innerContainer.addChild(header)
+    innerContainer.addChild(text)
+
+    container.addChild(innerContainer)
 
     circle.addChild(container)
 }
@@ -125,6 +135,8 @@ else {
 
 (globalThis as any).__PIXI_STAGE__ = stage;
 (globalThis as any).__PIXI_RENDERER__ = renderer;
+
+renderer.render(stage)
 
 ticker.add(deltaTime => {
     renderer.render(stage)
