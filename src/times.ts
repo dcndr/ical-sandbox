@@ -4,6 +4,7 @@ import './index.css'
 
 const fileInput: JQuery<HTMLInputElement> = $('#fileInput')
 const todayButton: JQuery<HTMLButtonElement> = $('#todayButton')
+const clockButton: JQuery<HTMLButtonElement> = $('#clockButton')
 const weekButton: JQuery<HTMLButtonElement> = $('#weekButton')
 const eventsList: JQuery<HTMLDivElement> = $('#events')
 const fileInputFakeButton: JQuery<HTMLButtonElement> = $('#fileInputFakeButton')
@@ -15,7 +16,7 @@ const autoUpdateCheckbox: JQuery<HTMLInputElement> = $('#autoupdate')
 let autoUpdateInterval: NodeJS.Timer | undefined
 export let events: CalendarComponent[]
 let filename: string | number | string[] = ""
-enum Mode { None, Today, Week }
+enum Mode { None, Today, Week, Clock }
 let mode = Mode.None;
 const periods = [...Array(8).keys()].map(period => period + 1)
 
@@ -71,26 +72,41 @@ const updateButtons = (): void => {
     switch (mode) {
         case Mode.None:
             todayButton.removeClass(styles[0])
+            clockButton.removeClass(styles[0])
             weekButton.removeClass(styles[0])
             todayButton.addClass(styles[1])
+            clockButton.addClass(styles[1])
             weekButton.addClass(styles[1])
             break
         case Mode.Today:
             todayButton.addClass(styles[0])
+            clockButton.removeClass(styles[0])
             weekButton.removeClass(styles[0])
             todayButton.removeClass(styles[1])
+            clockButton.addClass(styles[1])
+            weekButton.addClass(styles[1])
+            break
+        case Mode.Clock:
+            todayButton.removeClass(styles[0])
+            clockButton.addClass(styles[0])
+            weekButton.removeClass(styles[0])
+            todayButton.addClass(styles[1])
+            clockButton.removeClass(styles[1])
             weekButton.addClass(styles[1])
             break
         case Mode.Week:
             todayButton.removeClass(styles[0])
+            clockButton.removeClass(styles[0])
             weekButton.addClass(styles[0])
             todayButton.addClass(styles[1])
+            clockButton.addClass(styles[1])
             weekButton.removeClass(styles[1])
             break
     }
 }
 const updateHeaders = (): void => {
     switch (mode) {
+        case Mode.Clock:
         case Mode.None:
             todayHeader.hide()
             weekHeader.hide()
@@ -149,61 +165,79 @@ const eventsToWeek = (events: ical.CalendarComponent[]): string =>
             )
         }).join('')
 const updateTable = (): void => {
-    if (mode === Mode.Today) {
-        events.forEach((event) => {
-            if (event.type.toString() === 'VEVENT'
-                && new Date(event.start!).toLocaleDateString() === new Date().toLocaleDateString()) {
-                const classRow = eventToClass(event)
-                eventsList.append($(
-                    `
-                        <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-50 transition duration-700'>
-                            <td>${classRow.class}</td>
-                            <td class='hidden md:table-cell'>${classRow.teacher}</td>
-                            <td>${classRow.room.toString()}</td>
-                            <td>${classRow.period}</td>
-                            <td class='hidden sm:table-cell'>
-                            <table class="table-fixed inline-table w-1/2">
-                                <tbody>
-                                    <tr class="border-b-2 border-violet-200"><td>${classRow.start}</td></tr>
-                                    <tr class="border-t-2 border-violet-200"><td>${classRow.end}</td></tr>
-                                </tbody>
-                            </table>
-                            </td>
-                        </tr>
-                    `
-                ))
-            }
-        })
-        let noEvents: boolean = false
-        if (eventsList.children().length === 0) {
-            noEvents = true
-            periods.forEach(() => {
-                eventsList.append($(
-                    `
-                    <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-50 transition duration-700'>
-                        <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
-                        <td class="blur select-none hidden md:table-cell">${Math.random().toString(36).slice(2)}</td>
-                        <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
-                        <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
-                        <td class="blur select-none hidden sm:table-cell">${Math.random().toString(36).slice(2)}</td>
-                    </tr>
-                `
-                ))
+    switch (mode) {
+        case Mode.Today:
+            caption.parent().show()
+            events.forEach((event) => {
+                if (event.type.toString() === 'VEVENT'
+                    && new Date(event.start!).toLocaleDateString() === new Date().toLocaleDateString()) {
+                    const classRow = eventToClass(event)
+                    eventsList.append($(
+                        `
+                            <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-50 transition duration-700'>
+                                <td>${classRow.class}</td>
+                                <td class='hidden md:table-cell'>${classRow.teacher}</td>
+                                <td>${classRow.room.toString()}</td>
+                                <td>${classRow.period}</td>
+                                <td class='hidden sm:table-cell'>
+                                <table class="table-fixed inline-table w-1/2">
+                                    <tbody>
+                                        <tr class="border-b-2 border-violet-200"><td>${classRow.start}</td></tr>
+                                        <tr class="border-t-2 border-violet-200"><td>${classRow.end}</td></tr>
+                                    </tbody>
+                                </table>
+                                </td>
+                            </tr>
+                        `
+                    ))
+                }
             })
-        }
-
-        caption.html(
-            `
-            ${noEvents
-                ? 'No events to show<br />'
-                : ''
+            let noEventsToday = false;
+            if (eventsList.children().length === 0) {
+                noEventsToday = true;
+                periods.forEach(() => {
+                    eventsList.append($(
+                        `
+                            <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-50 transition duration-700'>
+                                <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
+                                <td class="blur select-none hidden md:table-cell">${Math.random().toString(36).slice(2)}</td>
+                                <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
+                                <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
+                                <td class="blur select-none hidden sm:table-cell">${Math.random().toString(36).slice(2)}</td>
+                            </tr>
+                        `
+                    ))
+                })
             }
-                Last updated <b>${new Date().toLocaleString()}</b>
-            `
-        )
-    }
-    else {
-        eventsList.append($(eventsToWeek(events.filter(event => getWeekNumber(new Date(event.start!)) === getWeekNumber(new Date())))))
+            caption.html(
+                `
+                ${noEventsToday
+                    ? 'No events to show<br />'
+                    : ''
+                }
+                    Last updated <b>${new Date().toLocaleString()}</b>
+                `
+            )
+            break
+        case Mode.Clock:
+            caption.parent().hide()
+            break
+        case Mode.Week:
+            caption.parent().show()
+            eventsList.append($(eventsToWeek(events.filter(event => getWeekNumber(new Date(event.start!)) === getWeekNumber(new Date())))))
+            let noEventsThisWeek;
+            if (eventsList.children().length === 0)
+                noEventsThisWeek = true
+            caption.html(
+                `
+                ${noEventsThisWeek
+                    ? 'No events to show<br />'
+                    : ''
+                }
+                    Last updated <b>${new Date().toLocaleString()}</b>
+                `
+            )
+            break
     }
 }
 
@@ -213,6 +247,7 @@ fileInput.on('change', (): void => {
     })
     filename = getFileName(fileInput.val()!)
     todayButton.prop('disabled', false)
+    clockButton.prop('disabled', false)
     weekButton.prop('disabled', false)
     fileInputFakeButton.html(
         `
@@ -228,6 +263,10 @@ fileInputFakeButton.on('click', (): void => {
 })
 todayButton.on('click', (): void => {
     mode = Mode.Today
+    update()
+})
+clockButton.on('click', (): void => {
+    mode = Mode.Clock
     update()
 })
 weekButton.on('click', (): void => {
@@ -252,6 +291,7 @@ if (localStorage.getItem('events')) {
     events = JSON.parse(localStorage.getItem('events')!)
     filename = localStorage.getItem('filename')!
     todayButton.prop('disabled', false)
+    clockButton.prop('disabled', false)
     weekButton.prop('disabled', false)
     fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${filename}</code>`)
     mode = Mode.Today
