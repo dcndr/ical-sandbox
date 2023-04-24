@@ -17,6 +17,7 @@
   },
   "dependencies": {
     "@types/ical": "^0.8.0",
+    "@types/sinon": "^10.0.13",
     "ical": "^0.8.0",
     "jquery": "^3.6.4",
     "pixi-filters": "^5.2.1",

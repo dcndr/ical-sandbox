@@ -18,32 +18,39 @@
             <b class="text-4xl text-black sm:text-5xl">SchoolScout</b>
             Dynamic Timetable View
         </h1>
-        <input type="file" id="fileInput" accept=".ics"
-            class="hidden">
-        <button id="fileInputFakeButton" class="group rounded-full border-0 py-2 px-4 sm:py-4 sm:px-8 bg-violet-100 text-violet-700 font-semibold shadow-md shadow-violet-300 cursor-pointer hover:text-violet-100 hover:bg-violet-700 transition text-sm sm:text-xl duration-300">
-            Choose an <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">.ics</code> file
+        <input type="file" id="fileInput" accept=".ics" class="hidden">
+        <button id="fileInputFakeButton"
+            class="group rounded-full border-0 py-2 px-4 sm:py-4 sm:px-8 bg-violet-100 text-violet-700 font-semibold
+                shadow-md shadow-violet-300 cursor-pointer hover:text-violet-100 hover:bg-violet-700 transition text-sm sm:text-xl duration-300">
+            Choose an <code
+                class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">.ics</code>
+            file
         </button>
         <div class="flex my-6 gap-4 flex-col sm:flex-row justify-center">
             <button id="todayButton"
-                class="rounded-full bg-violet-100 py-2 text-sm px-4 text-violet-700 font-semibold shadow-md shadow-violet-300 hover:text-violet-100 hover:bg-violet-700 transition disabled:bg-gray-200 disabled:text-gray-400 duration-300 sm:text-xl sm:px-6 sm:py-3 disabled:shadow-inner mx-auto sm:mx-0"
-                disabled="true">
+                class="rounded-full bg-violet-100 py-2 text-sm px-4 text-violet-700 font-semibold shadow-md
+                    shadow-violet-300 hover:text-violet-100 hover:bg-violet-700 transition disabled:bg-gray-200
+                    disabled:text-gray-400 duration-300 sm:text-xl sm:px-6 sm:py-3 disabled:shadow-inner mx-auto sm:mx-0" disabled="true">
                 Today's Events
             </button>
             <button id="weekButton"
-                class="rounded-full bg-violet-100 py-2 text-sm px-4 text-violet-700 font-semibold shadow-md shadow-violet-300 hover:text-violet-100 hover:bg-violet-700 transition disabled:bg-gray-200 disabled:text-gray-400 duration-300 sm:text-xl sm:px-6 sm:py-3 disabled:shadow-inner mx-auto sm:mx-0"
-                disabled="true">
+                class="rounded-full bg-violet-100 py-2 text-sm px-4 text-violet-700 font-semibold shadow-md
+                    shadow-violet-300 hover:text-violet-100 hover:bg-violet-700 transition disabled:bg-gray-200
+                    disabled:text-gray-400 duration-300 sm:text-xl sm:px-6 sm:py-3 disabled:shadow-inner mx-auto sm:mx-0" disabled="true">
                 Upcoming Week's Events
             </button>
         </div>
         <table class="opacity-0 transition duration-0 w-full shadow-xl table-fixed">
             <tbody>
-                <tr id="todayHeader" class="h-16 border-y bg-violet-50 border-y-violet-200 text-violet-700 text-semibold">
-                    <th>Class</th>
-                    <th class="hidden md:table-cell">Teacher</th>
-                    <th>Room</th>
-                    <th>Period</th>
-                    <th class='hidden sm:table-cell'>
+                <tr id="todayHeader"
+                    class="h-16 border-y bg-violet-50 border-y-violet-200 text-violet-700 text-semibold">
+                    <th scope="col">Class</th>
+                    <th scope="col" class="hidden md:table-cell">Teacher</th>
+                    <th scope="col">Room</th>
+                    <th scope="col">Period</th>
+                    <th scope="col" class='hidden sm:table-cell'>
                         <table class="table-fixed inline-table w-1/2">
+                            <caption></caption>
                             <tbody>
                                 <tr class="border-b-2 border-violet-200">
                                     <td>Start</td>
@@ -55,20 +62,38 @@
                         </table>
                     </th>
                 </tr>
-                <tr id="weekHeader" class="h-16 border-y bg-violet-100 border-y-violet-200 text-violet-700 text-semibold">
-                    <th>M<span class="hidden sm:inline">onday</span></th>
-                    <th>T<span class="hidden sm:inline">uesday</span></th>
-                    <th>W<span class="hidden sm:inline">ednesday</span></th>
-                    <th>T<span class="hidden sm:inline">hursday</span></th>
-                    <th>F<span class="hidden sm:inline">riday</span></th>
+                <tr id="weekHeader"
+                    class="h-16 border-y bg-violet-50 border-y-violet-200 text-violet-700 text-semibold">
+                    <th scope="col">M<span class="hidden sm:inline">onday</span></th>
+                    <th scope="col">T<span class="hidden sm:inline">uesday</span></th>
+                    <th scope="col">W<span class="hidden sm:inline">ednesday</span></th>
+                    <th scope="col">T<span class="hidden sm:inline">hursday</span></th>
+                    <th scope="col">F<span class="hidden sm:inline">riday</span></th>
                 </tr>
             </tbody>
             <tbody id="events"></tbody>
+            <caption class="caption-bottom">
+                <div class="inline-flex w-full">
+                    <div class="bg-white shadow-xl p-4 rounded-b-md italic text-gray-500 text-left select-none">
+                        <div id="caption"></div>
+                        <div>
+                            <button class="rounded-lg p-1 px-2 my-1 bg-gray-200 text-gray-600 shadow-lg shadow-black/30 text-sm font-semibold
+                                    hover:bg-gray-600 hover:text-gray-200 transition duration-300" id="updateButton">
+                                Update now
+                            </button>
+                            <span class="not-italic mr-2 font-semibold text-sm text-gray-600">
+                                <label for="autoupdate">or automatically every second</label>
+                                <input type="checkbox" name="autoupdate" id="autoupdate" class="ml-1">
+                            </span>
+                        </div>
+                    </div>
+                </div>
+            </caption>
         </table>
-        <canvas id="canvas" class="w-full">
-
-        </canvas>
     </div>
+    <canvas id="canvas" class="w-full h-[75vh]">
+
+    </canvas>
 </body>
 
 </html>

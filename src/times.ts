@@ -1,4 +1,4 @@
-import $, { nodeName } from 'jquery'
+import $ from 'jquery'
 import ical, { CalendarComponent } from 'ical'
 import './index.css'
 
@@ -9,6 +9,10 @@ const eventsList: JQuery<HTMLDivElement> = $('#events')
 const fileInputFakeButton: JQuery<HTMLButtonElement> = $('#fileInputFakeButton')
 const todayHeader: JQuery<HTMLTableCellElement> = $('#todayHeader')
 const weekHeader: JQuery<HTMLTableCellElement> = $('#weekHeader')
+const caption: JQuery<HTMLTableCaptionElement> = $('#caption')
+const updateButton: JQuery<HTMLButtonElement> = $('#updateButton')
+const autoUpdateCheckbox: JQuery<HTMLInputElement> = $('#autoupdate')
+let autoUpdateInterval: NodeJS.Timer | undefined
 export let events: CalendarComponent[]
 let filename: string | number | string[] = ""
 enum Mode { None, Today, Week }
@@ -23,18 +27,23 @@ type ClassRow = {
     start: string
     end: string
 }
-const eventToClass = (event: ical.CalendarComponent): ClassRow => {
+export const eventToClass = (event: ical.CalendarComponent): ClassRow => {
     const summaryRegex = /.+: ((((Yr \d+)|(Rec)) ([^(\n]+))|(\d+'s [a-zA-Z]+))./
 
-    const descriptionRegex = /Teacher:  (.+)\nPeriod: Period (.+)/
+    const descriptionRegex = /Teacher: {2}(.+)\nPeriod: Period (.+)/
     const descriptionMatches = Array.from(
         event.description!.match(descriptionRegex)!
     )
 
-    const locationRegex = /Room: (.+)/
-    const locationMatches = Array.from(
-        event.location!.match(locationRegex)!
-    )
+    let locationMatches;
+    if (event.location!.length != 0) {
+        const locationRegex = /Room: (.+)/
+        locationMatches = Array.from(
+            event.location!.match(locationRegex)!
+        )
+    }
+
+    locationMatches = locationMatches || ['', '-']
 
     const summaryMatches = Array.from(
         event.summary!.match(summaryRegex)!
@@ -164,13 +173,13 @@ const updateTable = (): void => {
                     `
                 ))
             }
-            else {
-                return
-            }
         })
-        periods.forEach(() => {
-            eventsList.append($(
-                `
+        let noEvents: boolean = false
+        if (eventsList.children().length === 0) {
+            noEvents = true
+            periods.forEach(() => {
+                eventsList.append($(
+                    `
                     <tr class='h-16 border-y border-y-violet-200 hover:bg-violet-50 transition duration-700'>
                         <td class="blur select-none">${Math.random().toString(36).slice(2)}</td>
                         <td class="blur select-none hidden md:table-cell">${Math.random().toString(36).slice(2)}</td>
@@ -179,9 +188,19 @@ const updateTable = (): void => {
                         <td class="blur select-none hidden sm:table-cell">${Math.random().toString(36).slice(2)}</td>
                     </tr>
                 `
-            ))
-        })
+                ))
+            })
+        }
 
+        caption.html(
+            `
+            ${noEvents
+                ? 'No events to show<br />'
+                : ''
+            }
+                Last updated <b>${new Date().toLocaleString()}</b>
+            `
+        )
     }
     else {
         eventsList.append($(eventsToWeek(events.filter(event => getWeekNumber(new Date(event.start!)) === getWeekNumber(new Date())))))
@@ -215,6 +234,19 @@ weekButton.on('click', (): void => {
     mode = Mode.Week
     update()
 })
+updateButton.on('click', update)
+autoUpdateCheckbox.on('change', (): void => {
+    if (autoUpdateCheckbox.prop('checked')) {
+        update()
+        autoUpdateInterval ??= setInterval(update, 1000)
+        localStorage.setItem('autoUpdate', 'true')
+    }
+    else {
+        clearInterval(autoUpdateInterval)
+        autoUpdateInterval = undefined
+        localStorage.setItem('autoUpdate', 'false')
+    }
+})
 
 if (localStorage.getItem('events')) {
     events = JSON.parse(localStorage.getItem('events')!)
@@ -224,4 +256,9 @@ if (localStorage.getItem('events')) {
     fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${filename}</code>`)
     mode = Mode.Today
     update()
+}
+
+if (localStorage.getItem('autoUpdate') === 'true') {
+    autoUpdateCheckbox.prop('checked', true)
+    autoUpdateInterval ??= setInterval(update, 1000)
 }
