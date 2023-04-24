@@ -13,6 +13,7 @@ const weekHeader: JQuery<HTMLTableCellElement> = $('#weekHeader')
 const caption: JQuery<HTMLTableCaptionElement> = $('#caption')
 const updateButton: JQuery<HTMLButtonElement> = $('#updateButton')
 const autoUpdateCheckbox: JQuery<HTMLInputElement> = $('#autoupdate')
+const canvas: JQuery<HTMLCanvasElement> = $("#canvas")
 let autoUpdateInterval: NodeJS.Timer | undefined
 export let events: CalendarComponent[]
 let filename: string | number | string[] = ""
@@ -107,6 +108,7 @@ const updateButtons = (): void => {
 const updateHeaders = (): void => {
     switch (mode) {
         case Mode.Clock:
+            canvas.show()
         case Mode.None:
             todayHeader.hide()
             weekHeader.hide()
@@ -114,10 +116,12 @@ const updateHeaders = (): void => {
         case Mode.Today:
             todayHeader.show()
             weekHeader.hide()
+            canvas.hide()
             break
         case Mode.Week:
             todayHeader.hide()
             weekHeader.show()
+            canvas.hide()
             break
     }
 }
@@ -294,7 +298,7 @@ if (localStorage.getItem('events')) {
     clockButton.prop('disabled', false)
     weekButton.prop('disabled', false)
     fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${filename}</code>`)
-    mode = Mode.Today
+    mode = Mode.Clock
     update()
 }
 

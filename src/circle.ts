@@ -4,8 +4,8 @@ import { BlurFilter, Container, Graphics, LINE_CAP, LINE_JOIN, Point, Text, Tick
 import { eventToClass, events } from './times'
 import Sinon from 'sinon'
 
-Sinon.useFakeTimers({
-    now: new Date(2023, 3, 27, 10, 0, 0),
+const clock = Sinon.useFakeTimers({
+    now: new Date(2023, 3, 27, 8, 40, 0),
     shouldAdvanceTime: true,
 })
 const canvas: JQuery<HTMLCanvasElement> = $("#canvas")
@@ -21,9 +21,10 @@ const renderer = autoDetectRenderer(
     }
 )
 const stage = new Container()
-const radius = Math.min(renderer.width, renderer.height) / 2 - 150
+const radius = Math.min(renderer.screen.width, renderer.screen.height) / 2 - 150
 const tickLength = 20
-const handLength = radius - 20
+const dayHandLength = radius - 60
+const periodHandLength = radius - 20
 const lineStyle = {
     width: 10,
     color: 0x333333,
@@ -35,11 +36,20 @@ const lineStyle = {
 const circle = new Graphics()
     .lineStyle(lineStyle)
     .drawCircle(0, 0, radius)
+    .beginFill(lineStyle.color)
+    .drawCircle(0, 0, 5)
+    .endFill()
+const dayHand = new Graphics()
+    .lineStyle(lineStyle)
+    .drawPolygon(
+        new Point(0, -20),
+        new Point(0, -dayHandLength)
+    )
 const periodHand = new Graphics()
     .lineStyle(lineStyle)
     .drawPolygon(
-        new Point(0, 0),
-        new Point(0, -handLength)
+        new Point(0, -20),
+        new Point(0, -periodHandLength)
     )
 const ticker = Ticker.shared
 
@@ -81,7 +91,6 @@ const drawTick = (
         = new Point(0, -radius - 80)
 
     container.rotation = average + Math.PI / 2
-
     innerContainer.rotation = container.rotation > Math.PI / 2 && container.rotation < Math.PI * 1.5 ? Math.PI : 0
 
     innerContainer.addChild(header)
@@ -100,12 +109,14 @@ const eventToAngles = (event: CalendarComponent): number[] => {
     const endAngle = ((endMinutesSinceMidnight - 520) * 360) / 386
     return [startAngle, endAngle]
 }
-const minutesSinceMidnight = () => {
-    return new Date().getHours() * 60 + new Date().getMinutes()
+const minutesSinceMidnight = (date: Date | undefined = undefined) => {
+    date ??= new Date()
+    return date.getHours() * 60 + date.getMinutes()
 }
 
-circle.pivot = new Point(-renderer.width / 2, -renderer.height / 2)
+circle.pivot = new Point(-renderer.screen.width / 2, -renderer.screen.height / 2)
 stage.addChild(circle)
+circle.addChild(dayHand)
 circle.addChild(periodHand)
 
 const eventsToday = events
@@ -113,6 +124,7 @@ const eventsToday = events
         event => event.type.toString() === 'VEVENT'
             && new Date(event.start!).toLocaleDateString() === new Date().toLocaleDateString()
     )
+
 if (eventsToday.length === 0 || minutesSinceMidnight() < 520 || minutesSinceMidnight() > 906) {
     circle.filters = [new BlurFilter(50, 20)]
     for (let i = 0; i < Math.random() * 2 + 10; i++) {
@@ -136,9 +148,22 @@ else {
 (globalThis as any).__PIXI_STAGE__ = stage;
 (globalThis as any).__PIXI_RENDERER__ = renderer;
 
-renderer.render(stage)
-
 ticker.add(deltaTime => {
     renderer.render(stage)
-    periodHand.angle = ((minutesSinceMidnight() - 520) * 360) / 386
+    dayHand.angle = ((minutesSinceMidnight() - 520) * 360) / 386
+    const bellsToday = eventsToday
+        .flatMap(event => [new Date(event.start!), new Date(event.end!)])
+        .map(date => date.getTime())
+        .filter((time, index, times) => times.indexOf(time) === index)
+        .map(time => new Date(time))
+    const previousBell = bellsToday.filter(bell => bell < new Date()).slice(-1)[0]
+    const nextBell = bellsToday.filter(bell => bell > new Date())[0]
+    const previousBellMinutesSinceMidnight = minutesSinceMidnight(previousBell)
+    const nextBellEndMinutesSinceMidnight = minutesSinceMidnight(nextBell)
+    periodHand.angle = ((minutesSinceMidnight() - previousBellMinutesSinceMidnight) * 360)
+        / (nextBellEndMinutesSinceMidnight - previousBellMinutesSinceMidnight)
+
+    clock.tick(deltaTime * 1000)
 })
+
+renderer.render(stage)
