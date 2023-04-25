@@ -20,8 +20,9 @@ let filename: string | number | string[] = ""
 enum Mode { None, Today, Week, Clock }
 let mode = Mode.None;
 const periods = [...Array(8).keys()].map(period => period + 1)
+export const timeFormat: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: 'numeric', hour12: true }
 
-type ClassRow = {
+export type ClassData = {
     class: string
     teacher: string
     room: string
@@ -29,7 +30,7 @@ type ClassRow = {
     start: string
     end: string
 }
-export const eventToClass = (event: ical.CalendarComponent): ClassRow => {
+export const eventToClass = (event: ical.CalendarComponent): ClassData => {
     const summaryRegex = /.+: ((((Yr \d+)|(Rec)) ([^(\n]+))|(\d+'s [a-zA-Z]+))./
 
     const descriptionRegex = /Teacher: {2}(.+)\nPeriod: Period (.+)/
@@ -55,8 +56,8 @@ export const eventToClass = (event: ical.CalendarComponent): ClassRow => {
         teacher: descriptionMatches[1].replace(/\w\S*/g, word => word.charAt(0).toUpperCase() + word.substring(1).toLowerCase()),
         room: locationMatches[1].startsWith('Gymnasium') ? 'Gym' : locationMatches[1],
         period: descriptionMatches[2],
-        start: new Date(event.start!).toLocaleTimeString([], { hour: 'numeric', minute: 'numeric' }),
-        end: new Date(event.end!).toLocaleTimeString([], { hour: 'numeric', minute: 'numeric' }),
+        start: new Date(event.start!).toLocaleTimeString([], timeFormat).replace(/^0:/, '12:'),
+        end: new Date(event.end!).toLocaleTimeString([], timeFormat).replace(/^0:/, '12:'),
     }
 }
 const getFileName = (path: string | number | string[]): string => {

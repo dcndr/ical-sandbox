@@ -1,11 +1,11 @@
 import { CalendarComponent } from 'ical'
 import $ from 'jquery'
-import { BlurFilter, Container, Graphics, LINE_CAP, LINE_JOIN, Point, Text, Ticker, autoDetectRenderer } from 'pixi.js'
-import { eventToClass, events } from './times'
+import { BlurFilter, Container, Graphics, HTMLText, HTMLTextStyle, LINE_CAP, LINE_JOIN, Point, Text, Ticker, autoDetectRenderer } from 'pixi.js'
+import { ClassData, eventToClass, events, timeFormat } from './times'
 import Sinon from 'sinon'
 
 const clock = Sinon.useFakeTimers({
-    now: new Date(2023, 3, 27, 8, 40, 0),
+    now: new Date(2023, 3, 26, 8, 40, 0),
     shouldAdvanceTime: true,
 })
 const canvas: JQuery<HTMLCanvasElement> = $("#canvas")
@@ -54,64 +54,72 @@ const periodHand = new Graphics()
 const ticker = Ticker.shared
 
 const drawTick = (
-    anglesDegrees: number[],
-    label: { header: string, text: string } = { header: '', text: '' }
+    angles: number[],
+    classData: ClassData | string = {
+        class: '',
+        teacher: '',
+        room: '',
+        period: '',
+        start: '',
+        end: '',
+    },
 ): void => {
-    anglesDegrees = anglesDegrees.map(angle => (angle - 90) * Math.PI / 180)
-    anglesDegrees.forEach(angle => {
-        circle.drawPolygon(
-            new Point(Math.cos(angle) * radius, Math.sin(angle) * radius),
-            new Point(Math.cos(angle) * (radius + tickLength), Math.sin(angle) * (radius + tickLength))
-        )
-    })
+    angles
+        .map(angle => angle - Math.PI * 0.5)
+        .forEach(angle => {
+            circle.drawPolygon(
+                new Point(Math.cos(angle) * radius, Math.sin(angle) * radius),
+                new Point(Math.cos(angle) * (radius + tickLength), Math.sin(angle) * (radius + tickLength))
+            )
+        })
     const container = new Container()
-    const innerContainer = new Container()
-    const header = new Text(label.header, {
-        fontFamily: 'system-ui',
-        fontSize: 16,
-        fill: 0x333333,
-        align: 'center',
-        wordWrap: true,
-        wordWrapWidth: 120,
-        fontWeight: 'bold'
-    })
-    const text = new Text(label.text, {
-        fontFamily: 'system-ui',
-        fontSize: 16,
-        fill: 0x333333,
-        align: 'center',
-        wordWrap: true,
-        wordWrapWidth: 120,
-    })
+    const text = new HTMLText(
+        (typeof classData === 'string'
+            ? classData
+            : `
+                <b>${isNaN(+classData.period) ? '' : `Period `}${classData.period}</b>
+                ${isNaN(+classData.period) ? '' : `<br />`}
 
-    header.anchor.set(0.5, 1)
-    text.anchor.set(0.5, 0)
-    const average = anglesDegrees.reduce((previous, current) => previous + current) / anglesDegrees.length
-    innerContainer.position
-        = new Point(0, -radius - 80)
+                <i>${classData.class}</i>
+            ${classData.room !== '-'
+                ? `${classData.room !== '' ? `<br />in `: ''}<b>${classData.room}</b>`
+                : ''
+            }
+                <br />
+                ${classData.start} - ${classData.end}
+            `).trim(), new HTMLTextStyle({
+                    fontFamily: 'system-ui',
+                    fontSize: 15,
+                    fill: 0x333333,
+                    align: 'center',
+                    wordWrap: true,
+                    wordWrapWidth: 200,
+                })
+    )
 
-    container.rotation = average + Math.PI / 2
-    innerContainer.rotation = container.rotation > Math.PI / 2 && container.rotation < Math.PI * 1.5 ? Math.PI : 0
+    const center = angles.reduce((previous, current) => previous + current) / angles.length
+    const upsideDown = center > Math.PI / 2 && center < 1.5 * Math.PI
+    text.anchor.set(0.5, upsideDown ? 0 : 1)
+    container.pivot.set(0, radius + 30)
+    container.rotation = center
+    text.rotation = upsideDown ? Math.PI : 0
 
-    innerContainer.addChild(header)
-    innerContainer.addChild(text)
-
-    container.addChild(innerContainer)
-
+    container.addChild(text)
     circle.addChild(container)
 }
-const eventToAngles = (event: CalendarComponent): number[] => {
-    const start = new Date(event.start!)
-    const end = new Date(event.end!)
-    const startMinutesSinceMidnight = start.getHours() * 60 + start.getMinutes()
-    const endMinutesSinceMidnight = end.getHours() * 60 + end.getMinutes()
-    const startAngle = ((startMinutesSinceMidnight - 520) * 360) / 386
-    const endAngle = ((endMinutesSinceMidnight - 520) * 360) / 386
-    return [startAngle, endAngle]
-}
+const eventToAngles = (event: CalendarComponent): number[] => [dateToAngle(new Date(event.start!)), dateToAngle(new Date(event.end!))]
+const wednesday = () => new Date().getDay() === 3
+const dateToAngle = (date: Date): number => ((minutesSinceMidnight(date) - 520) * 2 * Math.PI) / ((wednesday() ? 870 : 906) - 520)
 const minutesSinceMidnight = (date: Date | undefined = undefined) => {
     date ??= new Date()
     return date.getHours() * 60 + date.getMinutes()
+}
+const bellsToday = () => {
+    return eventsToday
+        .flatMap(event => [new Date(event.start!), new Date(event.end!)])
+        .map(date => date.getTime())
+        .filter((time, index, times) => times.indexOf(time) === index)
+        .map(time => new Date(time))
 }
 
 circle.pivot = new Point(-renderer.screen.width / 2, -renderer.screen.height / 2)
@@ -125,43 +133,50 @@ const eventsToday = events
             && new Date(event.start!).toLocaleDateString() === new Date().toLocaleDateString()
     )
 
-if (eventsToday.length === 0 || minutesSinceMidnight() < 520 || minutesSinceMidnight() > 906) {
-    circle.filters = [new BlurFilter(50, 20)]
-    for (let i = 0; i < Math.random() * 2 + 10; i++) {
-        drawTick([Math.random() * 360], {
-            header: Math.random().toString(36).slice(2),
-            text: Math.random().toString(36).slice(2),
-        })
+eventsToday
+    .forEach(event => {
+        drawTick(eventToAngles(event), eventToClass(event))
+    });
+const recess = bellsToday().slice(2, 4)
+drawTick(
+    recess.map(date => dateToAngle(date)),
+    {
+        period: 'Recess',
+        start: recess[0].toLocaleTimeString([], timeFormat).replace(/^0:/, '12:'),
+        end: recess[1].toLocaleTimeString([], timeFormat).replace(/^0:/, '12:'),
+        class: '',
+        teacher: '',
+        room: '',
     }
-}
-else {
-    eventsToday
-        .forEach(event => {
-            const classData = eventToClass(event)
-            drawTick(eventToAngles(event), {
-                header: `Period ${classData.period}`,
-                text: classData.class,
-            })
-        })
-}
+);
+const lunch = bellsToday().slice(6, 8)
+drawTick(
+    lunch.map(date => dateToAngle(date)),
+    {
+        period: 'Lunch',
+        start: lunch[0].toLocaleTimeString([], timeFormat).replace(/^0:/, '12:'),
+        end: lunch[1].toLocaleTimeString([], timeFormat).replace(/^0:/, '12:'),
+        class: '',
+        teacher: '',
+        room: '',
+    }
+);
 
-(globalThis as any).__PIXI_STAGE__ = stage;
-(globalThis as any).__PIXI_RENDERER__ = renderer;
+(() => {
+    (globalThis as any).__PIXI_STAGE__ = stage;
+    (globalThis as any).__PIXI_RENDERER__ = renderer;
+})()
 
 ticker.add(deltaTime => {
     renderer.render(stage)
-    dayHand.angle = ((minutesSinceMidnight() - 520) * 360) / 386
-    const bellsToday = eventsToday
-        .flatMap(event => [new Date(event.start!), new Date(event.end!)])
-        .map(date => date.getTime())
-        .filter((time, index, times) => times.indexOf(time) === index)
-        .map(time => new Date(time))
-    const previousBell = bellsToday.filter(bell => bell < new Date()).slice(-1)[0]
-    const nextBell = bellsToday.filter(bell => bell > new Date())[0]
-    const previousBellMinutesSinceMidnight = minutesSinceMidnight(previousBell)
-    const nextBellEndMinutesSinceMidnight = minutesSinceMidnight(nextBell)
-    periodHand.angle = ((minutesSinceMidnight() - previousBellMinutesSinceMidnight) * 360)
-        / (nextBellEndMinutesSinceMidnight - previousBellMinutesSinceMidnight)
+    dayHand.rotation = dateToAngle(new Date())
+    const previousBell = bellsToday().filter(bell => bell < new Date()).slice(-1)[0]
+    const nextBell = bellsToday().filter(bell => bell > new Date())[0]
+    periodHand.rotation = ((minutesSinceMidnight() - minutesSinceMidnight(previousBell)) * 2 * Math.PI)
+        / (minutesSinceMidnight(nextBell) - minutesSinceMidnight(previousBell))
+    circle.filters = eventsToday.length === 0 || minutesSinceMidnight() < 520 || minutesSinceMidnight() > 906
+        ? [new BlurFilter(50, 20)]
+        : []
 
     clock.tick(deltaTime * 1000)
 })
