@@ -5,7 +5,7 @@ import { ClassData, eventToClass, events, timeFormat } from './times'
 import Sinon from 'sinon'
 
 const clock = Sinon.useFakeTimers({
-    now: new Date(2023, 3, 26, 8, 40, 0),
+    now: new Date(2023, 3, 31, 8, 30, 0),
     shouldAdvanceTime: true,
 })
 const canvas: JQuery<HTMLCanvasElement> = $("#canvas")
@@ -77,29 +77,34 @@ const drawTick = (
         (typeof classData === 'string'
             ? classData
             : `
-                <b>${isNaN(+classData.period) ? '' : `Period `}${classData.period}</b>
+                <font size='4'>
+                    <b>${isNaN(+classData.period) ? '' : `Period `}${classData.period}</b>
+                </font>
                 ${isNaN(+classData.period) ? '' : `<br />`}
 
-                <i>${classData.class}</i>
+                <font size='2'>
+                    <i>${classData.class}</i>
+                </font>
+
+                <font size='3'>
             ${classData.room !== '-'
-                ? `${classData.room !== '' ? `<br />in `: ''}<b>${classData.room}</b>`
+                ? `${classData.room !== '' ? `<br />in ` : ''}<b>${classData.room}</b>`
                 : ''
             }
+                </font>
                 <br />
-                ${classData.start} - ${classData.end}
+                <font size='2'>${classData.start} - ${classData.end}</font>
             `).trim(), new HTMLTextStyle({
-                    fontFamily: 'system-ui',
-                    fontSize: 15,
-                    fill: 0x333333,
-                    align: 'center',
-                    wordWrap: true,
-                    wordWrapWidth: 200,
-                })
+                fontFamily: 'system-ui',
+                fontSize: 15,
+                fill: 0x333333,
+                align: 'center',
+            })
     )
 
     const center = angles.reduce((previous, current) => previous + current) / angles.length
     const upsideDown = center > Math.PI / 2 && center < 1.5 * Math.PI
-    text.anchor.set(0.5, upsideDown ? 0 : 1)
+    text.anchor.set(0.5, upsideDown ? -0.2 : 1)
     container.pivot.set(0, radius + 30)
     container.rotation = center
     text.rotation = upsideDown ? Math.PI : 0
@@ -149,7 +154,7 @@ drawTick(
         room: '',
     }
 );
-const lunch = bellsToday().slice(6, 8)
+const lunch = wednesday() ? bellsToday().slice(6, 8) : bellsToday().slice(8, 10)
 drawTick(
     lunch.map(date => dateToAngle(date)),
     {
@@ -161,6 +166,21 @@ drawTick(
         room: '',
     }
 );
+
+if (!wednesday()) {
+    const breakTime = bellsToday().slice(5, 7)
+    drawTick(
+        breakTime.map(date => dateToAngle(date)),
+        {
+            period: 'Break',
+            start: breakTime[0].toLocaleTimeString([], timeFormat).replace(/^0:/, '12:'),
+            end: breakTime[1].toLocaleTimeString([], timeFormat).replace(/^0:/, '12:'),
+            class: '',
+            teacher: '',
+            room: '',
+        }
+    );
+}
 
 (() => {
     (globalThis as any).__PIXI_STAGE__ = stage;
@@ -178,7 +198,7 @@ ticker.add(deltaTime => {
         ? [new BlurFilter(50, 20)]
         : []
 
-    clock.tick(deltaTime * 1000)
+    clock.tick(deltaTime * 3000)
 })
 
 renderer.render(stage)
