@@ -1,13 +1,8 @@
 import { CalendarComponent } from 'ical'
 import $ from 'jquery'
-import { BlurFilter, Container, Graphics, HTMLText, HTMLTextStyle, LINE_CAP, LINE_JOIN, Point, Text, Ticker, autoDetectRenderer } from 'pixi.js'
-import { ClassData, eventToClass, events, timeFormat } from './times'
-import Sinon from 'sinon'
+import { Container, Graphics, HTMLText, HTMLTextStyle, LINE_CAP, LINE_JOIN, Point, Ticker, autoDetectRenderer } from 'pixi.js'
+import { ClassData, bellsToday, correctDate, eventToClass, events, eventsToday, minutesSinceMidnight, timeFormat } from './times'
 
-const clock = Sinon.useFakeTimers({
-    now: new Date(2023, 3, 31, 8, 30, 0),
-    shouldAdvanceTime: true,
-})
 const canvas: JQuery<HTMLCanvasElement> = $("#canvas")
 const renderer = autoDetectRenderer(
     {
@@ -51,7 +46,6 @@ const periodHand = new Graphics()
         new Point(0, -20),
         new Point(0, -periodHandLength)
     )
-const ticker = Ticker.shared
 
 const drawTick = (
     angles: number[],
@@ -78,9 +72,9 @@ const drawTick = (
             ? classData
             : `
                 <font size='4'>
-                    <b>${isNaN(+classData.period) ? '' : `Period `}${classData.period}</b>
+                    <b>${isNaN(+classData.period) ? '' : 'Period '}${classData.period}</b>
                 </font>
-                ${isNaN(+classData.period) ? '' : `<br />`}
+                ${isNaN(+classData.period) ? '' : '<br />'}
 
                 <font size='2'>
                     <i>${classData.class}</i>
@@ -88,7 +82,7 @@ const drawTick = (
 
                 <font size='3'>
             ${classData.room !== '-'
-                ? `${classData.room !== '' ? `<br />in ` : ''}<b>${classData.room}</b>`
+                ? `${classData.room !== '' ? '<br />in ' : ''}<b>${classData.room}</b>`
                 : ''
             }
                 </font>
@@ -113,38 +107,21 @@ const drawTick = (
     circle.addChild(container)
 }
 const eventToAngles = (event: CalendarComponent): number[] => [dateToAngle(new Date(event.start!)), dateToAngle(new Date(event.end!))]
-const wednesday = () => new Date().getDay() === 3
+const wednesday = () => correctDate().getDay() === 3
 const dateToAngle = (date: Date): number => ((minutesSinceMidnight(date) - 520) * 2 * Math.PI) / ((wednesday() ? 870 : 906) - 520)
-const minutesSinceMidnight = (date: Date | undefined = undefined) => {
-    date ??= new Date()
-    return date.getHours() * 60 + date.getMinutes()
-}
-const bellsToday = () => {
-    return eventsToday
-        .flatMap(event => [new Date(event.start!), new Date(event.end!)])
-        .map(date => date.getTime())
-        .filter((time, index, times) => times.indexOf(time) === index)
-        .map(time => new Date(time))
-}
 
 circle.pivot = new Point(-renderer.screen.width / 2, -renderer.screen.height / 2)
 stage.addChild(circle)
 circle.addChild(dayHand)
 circle.addChild(periodHand)
 
-const eventsToday = events
-    .filter(
-        event => event.type.toString() === 'VEVENT'
-            && new Date(event.start!).toLocaleDateString() === new Date().toLocaleDateString()
-    )
-
-eventsToday
+eventsToday()
     .forEach(event => {
         drawTick(eventToAngles(event), eventToClass(event))
     });
 const recess = bellsToday().slice(2, 4)
 drawTick(
-    recess.map(date => dateToAngle(date)),
+    recess.map((date: Date) => dateToAngle(date)),
     {
         period: 'Recess',
         start: recess[0].toLocaleTimeString([], timeFormat).replace(/^0:/, '12:'),
@@ -156,7 +133,7 @@ drawTick(
 );
 const lunch = wednesday() ? bellsToday().slice(6, 8) : bellsToday().slice(8, 10)
 drawTick(
-    lunch.map(date => dateToAngle(date)),
+    lunch.map((date: Date) => dateToAngle(date)),
     {
         period: 'Lunch',
         start: lunch[0].toLocaleTimeString([], timeFormat).replace(/^0:/, '12:'),
@@ -170,7 +147,7 @@ drawTick(
 if (!wednesday()) {
     const breakTime = bellsToday().slice(5, 7)
     drawTick(
-        breakTime.map(date => dateToAngle(date)),
+        breakTime.map((date: Date) => dateToAngle(date)),
         {
             period: 'Break',
             start: breakTime[0].toLocaleTimeString([], timeFormat).replace(/^0:/, '12:'),
@@ -187,18 +164,14 @@ if (!wednesday()) {
     (globalThis as any).__PIXI_RENDERER__ = renderer;
 })()
 
-ticker.add(deltaTime => {
+const ticker = Ticker.shared
+ticker.maxFPS = 30
+ticker.minFPS = 10
+ticker.add(() => {
     renderer.render(stage)
-    dayHand.rotation = dateToAngle(new Date())
-    const previousBell = bellsToday().filter(bell => bell < new Date()).slice(-1)[0]
-    const nextBell = bellsToday().filter(bell => bell > new Date())[0]
+    dayHand.rotation = dateToAngle(correctDate())
+    const previousBell = bellsToday().filter(bell => bell < correctDate()).slice(-1)[0]
+    const nextBell = bellsToday().filter(bell => bell > correctDate())[0]
     periodHand.rotation = ((minutesSinceMidnight() - minutesSinceMidnight(previousBell)) * 2 * Math.PI)
         / (minutesSinceMidnight(nextBell) - minutesSinceMidnight(previousBell))
-    circle.filters = eventsToday.length === 0 || minutesSinceMidnight() < 520 || minutesSinceMidnight() > 906
-        ? [new BlurFilter(50, 20)]
-        : []
-
-    clock.tick(deltaTime * 3000)
 })
-
-renderer.render(stage)

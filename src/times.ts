@@ -1,19 +1,22 @@
-import $ from 'jquery'
+import $, { event } from 'jquery'
 import ical, { CalendarComponent } from 'ical'
 import './index.css'
 
-const fileInput: JQuery<HTMLInputElement> = $('#fileInput')
-const todayButton: JQuery<HTMLButtonElement> = $('#todayButton')
-const clockButton: JQuery<HTMLButtonElement> = $('#clockButton')
-const weekButton: JQuery<HTMLButtonElement> = $('#weekButton')
-const eventsList: JQuery<HTMLDivElement> = $('#events')
-const fileInputFakeButton: JQuery<HTMLButtonElement> = $('#fileInputFakeButton')
-const todayHeader: JQuery<HTMLTableCellElement> = $('#todayHeader')
-const weekHeader: JQuery<HTMLTableCellElement> = $('#weekHeader')
-const caption: JQuery<HTMLTableCaptionElement> = $('#caption')
-const updateButton: JQuery<HTMLButtonElement> = $('#updateButton')
-const autoUpdateCheckbox: JQuery<HTMLInputElement> = $('#autoupdate')
-const canvas: JQuery<HTMLCanvasElement> = $("#canvas")
+const fileInput: JQuery<HTMLInputElement> = $('#fileInput'),
+    todayButton: JQuery<HTMLButtonElement> = $('#todayButton'),
+    clockButton: JQuery<HTMLButtonElement> = $('#clockButton'),
+    weekButton: JQuery<HTMLButtonElement> = $('#weekButton'),
+    eventsList: JQuery<HTMLDivElement> = $('#events'),
+    fileInputFakeButton: JQuery<HTMLButtonElement> = $('#fileInputFakeButton'),
+    todayHeader: JQuery<HTMLTableCellElement> = $('#todayHeader'),
+    weekHeader: JQuery<HTMLTableCellElement> = $('#weekHeader'),
+    caption: JQuery<HTMLTableCaptionElement> = $('#caption'),
+    updateButton: JQuery<HTMLButtonElement> = $('#updateButton'),
+    autoUpdateCheckbox: JQuery<HTMLInputElement> = $('#autoupdate'),
+    canvas: JQuery<HTMLCanvasElement> = $("#canvas"),
+    timeOffsetInput: JQuery<HTMLInputElement> = $('#timeOffset'),
+    timeOffsetUnitDisplay: JQuery<HTMLSpanElement> = $('#timeOffsetUnitDisplay'),
+    synchroniseButton: JQuery<HTMLButtonElement> = $('#synchroniseButton')
 let autoUpdateInterval: NodeJS.Timer | undefined
 export let events: CalendarComponent[]
 let filename: string | number | string[] = ""
@@ -21,6 +24,10 @@ enum Mode { None, Today, Week, Clock }
 let mode = Mode.None;
 const periods = [...Array(8).keys()].map(period => period + 1)
 export const timeFormat: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: 'numeric', hour12: true }
+let timeOffset: number = 0
+let noEventsToday = false;
+let noEventsThisWeek = false;
+let calendar: ical.FullCalendar | undefined;
 
 export type ClassData = {
     class: string
@@ -29,6 +36,19 @@ export type ClassData = {
     period: string
     start: string
     end: string
+}
+export const correctDate = (date?: Date | undefined) => {
+    date ??= new Date()
+    date.setSeconds(date.getSeconds() + timeOffset)
+    return date
+}
+export const minutesSinceMidnight = (date: Date | undefined = undefined) => {
+    date ??= correctDate()
+    return date.getHours() * 60 + date.getMinutes()
+}
+const secondsSinceMidnight = (date: Date | undefined = undefined) => {
+    date ??= correctDate()
+    return date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds()
 }
 export const eventToClass = (event: ical.CalendarComponent): ClassData => {
     const summaryRegex = /.+: ((((Yr \d+)|(Rec)) ([^(\n]+))|(\d+'s [a-zA-Z]+))./
@@ -110,33 +130,42 @@ const updateHeaders = (): void => {
     switch (mode) {
         case Mode.Clock:
             canvas.show()
+            todayHeader.hide()
+            weekHeader.hide()
+            caption.parent().show()
+            break
         case Mode.None:
             todayHeader.hide()
             weekHeader.hide()
+            caption.parent().hide()
+            canvas.hide()
             break
         case Mode.Today:
             todayHeader.show()
             weekHeader.hide()
+            caption.parent().show()
             canvas.hide()
             break
         case Mode.Week:
             todayHeader.hide()
             weekHeader.show()
+            caption.parent().show()
             canvas.hide()
             break
     }
 }
 const dataToEvents = (data: string): CalendarComponent[] => {
-    const calendar = ical.parseICS(data)
+    if (calendar === undefined)
+        calendar = ical.parseICS(data)
     const events = Object.entries(calendar)
-        .filter(entry => calendar[entry[0]].type.toString() === 'VEVENT')
+        .filter(entry => getWeekNumber(new Date(entry[1].start!)) == getWeekNumber(correctDate()))
         .map(entry => entry[1])
     return events
 }
 const getWeekNumber = (date: Date): number => {
-    date = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+    date = correctDate(new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())));
     date.setUTCDate(date.getUTCDate() + 4 - (date.getUTCDay() || 7));
-    const yearStart = new Date(Date.UTC(date.getUTCFullYear(), 0, 1));
+    const yearStart = correctDate(new Date(Date.UTC(date.getUTCFullYear(), 0, 1)));
     const weekNo = Math.ceil((((date.getTime() - yearStart.getTime()) / 86400000) + 1) / 7);
     return weekNo;
 }
@@ -151,7 +180,12 @@ const update = (): void => {
     if (localStorage.getItem('filename') !== filename) {
         localStorage.setItem('filename', filename as string)
     }
-    updateTable()
+    if (localStorage.getItem('mode') !== mode.toString()) {
+        localStorage.setItem('mode', mode.toString())
+    }
+
+    if (events)
+        updateTable()
 }
 const eventsToWeek = (events: ical.CalendarComponent[]): string =>
     periods
@@ -172,10 +206,8 @@ const eventsToWeek = (events: ical.CalendarComponent[]): string =>
 const updateTable = (): void => {
     switch (mode) {
         case Mode.Today:
-            caption.parent().show()
             events.forEach((event) => {
-                if (event.type.toString() === 'VEVENT'
-                    && new Date(event.start!).toLocaleDateString() === new Date().toLocaleDateString()) {
+                if (new Date(event.start!).toLocaleDateString() === correctDate().toLocaleDateString()) {
                     const classRow = eventToClass(event)
                     eventsList.append($(
                         `
@@ -197,7 +229,6 @@ const updateTable = (): void => {
                     ))
                 }
             })
-            let noEventsToday = false;
             if (eventsList.children().length === 0) {
                 noEventsToday = true;
                 periods.forEach(() => {
@@ -220,17 +251,35 @@ const updateTable = (): void => {
                     ? 'No events to show<br />'
                     : ''
                 }
-                    Last updated <b>${new Date().toLocaleString()}</b>
+                    Last updated
+                    <b>
+                        ${correctDate().toLocaleString()}
+                        <span class="${timeOffset < 0 ? 'text-red-500' : 'text-green-500'}">
+                            ${timeOffset < 0 ? '-' : '+'} ${Math.abs(timeOffset)} ${timeOffsetUnitDisplay.html()}
+                        </span>
+                    </b>
                 `
             )
             break
         case Mode.Clock:
-            caption.parent().hide()
+            caption.html(
+                `
+                ${noEventsToday
+                    ? 'No events to show<br />'
+                    : ''
+                }
+                    Last updated
+                    <b>
+                        ${correctDate().toLocaleString()}
+                        <span class="${timeOffset < 0 ? 'text-red-500' : 'text-green-500'}">
+                            (${timeOffset < 0 ? '-' : '+'} ${Math.abs(timeOffset)} ${timeOffsetUnitDisplay.html()})
+                        </span>
+                    </b>
+                `
+            )
             break
         case Mode.Week:
-            caption.parent().show()
-            eventsList.append($(eventsToWeek(events.filter(event => getWeekNumber(new Date(event.start!)) === getWeekNumber(new Date())))))
-            let noEventsThisWeek;
+            eventsList.append($(eventsToWeek(events.filter(event => getWeekNumber(new Date(event.start!)) === getWeekNumber(correctDate())))))
             if (eventsList.children().length === 0)
                 noEventsThisWeek = true
             caption.html(
@@ -239,11 +288,30 @@ const updateTable = (): void => {
                     ? 'No events to show<br />'
                     : ''
                 }
-                    Last updated <b>${new Date().toLocaleString()}</b>
+                    Last updated
+                    <b>
+                        ${correctDate().toLocaleString()}
+                        <span class="${timeOffset < 0 ? 'text-red-500' : 'text-green-500'}">
+                            (${timeOffset < 0 ? '-' : '+'} ${Math.abs(timeOffset)} ${timeOffsetUnitDisplay.html()})
+                        </span>
+                    </b>
                 `
             )
             break
     }
+}
+export const eventsToday = (): CalendarComponent[] =>
+    events
+        .filter(
+            event => new Date(event.start!).toLocaleDateString() === correctDate().toLocaleDateString()
+        )
+export const bellsToday = () => {
+    const bellsToday = eventsToday()
+        .flatMap((event: CalendarComponent) => [new Date(event.start!), new Date(event.end!)])
+        .map(date => date.getTime())
+        .filter((time, index, times) => times.indexOf(time) === index)
+        .map(time => new Date(time))
+    return bellsToday
 }
 
 fileInput.on('change', (): void => {
@@ -279,6 +347,14 @@ weekButton.on('click', (): void => {
     update()
 })
 updateButton.on('click', update)
+synchroniseButton.on('click', (): void => {
+    const closestBell = bellsToday().sort((a, b) =>
+        Math.abs(a.getTime() - correctDate().getTime())
+        - Math.abs(b.getTime() - correctDate().getTime())
+    )[0]
+    timeOffsetInput.val(secondsSinceMidnight(closestBell) - secondsSinceMidnight(new Date()))
+    timeOffsetInput.trigger('change')
+})
 autoUpdateCheckbox.on('change', (): void => {
     if (autoUpdateCheckbox.prop('checked')) {
         update()
@@ -291,6 +367,20 @@ autoUpdateCheckbox.on('change', (): void => {
         localStorage.setItem('autoUpdate', 'false')
     }
 })
+timeOffsetInput.on('input', (): void => {
+    const value = parseFloat(timeOffsetInput.val() as string)
+    timeOffsetUnitDisplay.html([-1, 1].includes(value) ? 'second' : 'seconds')
+    if (value > parseFloat(timeOffsetInput.prop('max')))
+        timeOffsetInput.val(timeOffsetInput.prop('max'))
+    else if (value < parseFloat(timeOffsetInput.prop('min')))
+        timeOffsetInput.val(timeOffsetInput.prop('min'))
+    localStorage.setItem('timeOffset', timeOffsetInput.val() as string)
+    timeOffset = parseFloat(timeOffsetInput.val() as string) || 0
+    update()
+})
+timeOffsetInput.on('change', (): void => {
+    timeOffsetInput.val(timeOffset || 0)
+})
 
 if (localStorage.getItem('events')) {
     events = JSON.parse(localStorage.getItem('events')!)
@@ -299,11 +389,16 @@ if (localStorage.getItem('events')) {
     clockButton.prop('disabled', false)
     weekButton.prop('disabled', false)
     fileInputFakeButton.html(`Selected file: <code class="bg-violet-300 rounded-md p-1 group-hover:bg-violet-600 text-violet-600 group-hover:text-violet-100 transition">${filename}</code>`)
-    mode = Mode.Clock
-    update()
+    mode = parseInt(localStorage.getItem('mode')!)
 }
-
 if (localStorage.getItem('autoUpdate') === 'true') {
     autoUpdateCheckbox.prop('checked', true)
     autoUpdateInterval ??= setInterval(update, 1000)
 }
+if (localStorage.getItem('timeOffset')) {
+    timeOffsetInput.val(localStorage.getItem('timeOffset')!)
+    timeOffsetInput.trigger('change')
+    timeOffset = parseFloat(localStorage.getItem('timeOffset')!)
+}
+
+update()
