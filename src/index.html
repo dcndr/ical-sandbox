@@ -79,13 +79,14 @@
             </tbody>
             <tbody id="events"></tbody>
             <caption class="caption-bottom">
-                <div class="inline-flex w-full">
+                <div class="inline-flex w-full justify-between">
                     <div class="bg-white shadow-xl p-4 rounded-b-md italic text-gray-500 text-left select-none">
                         <div id="caption"></div>
                         <div class="text-sm font-semibold not-italic text-gray-600">
                             <div>
                                 <button class="rounded-lg p-1 px-2 my-1 bg-gray-200 shadow-lg shadow-black/30
-                                    hover:bg-gray-600 hover:text-gray-200 transition duration-300 mx-1" id="updateButton">
+                                    hover:bg-gray-600 hover:text-gray-200 transition duration-300 mx-1"
+                                    id="updateButton">
                                     Update now
                                 </button>
                                 <span class="mr-2">
@@ -97,19 +98,15 @@
                                 <div>
                                     <label for="timeOffset">Correct the time by</label>
                                     <input type="number" name="timeOffset" id="timeOffset"
-                                        class="border rounded border-gray-400 mx-1 w-20 text-center p-1"
-                                        min="-3600"
-                                        max="3600"
-                                        value="0"
-                                    >
+                                        class="border rounded border-gray-400 mx-1 w-20 text-center p-1" min="-3600"
+                                        max="3600" value="0">
                                     <span for="timeOffset" id="timeOffsetUnitDisplay">seconds</span>
                                 </div>
                                 <div>
                                     or
                                     <button class="rounded-lg p-1 px-2 my-1 bg-gray-200 shadow-lg shadow-black/30
                                         hover:bg-gray-600 hover:text-gray-200 transition duration-300 mx-1"
-                                        id="synchroniseButton"
-                                    >
+                                        id="synchroniseButton">
                                         synchronise
                                     </button>
                                     to the bell
@@ -117,11 +114,11 @@
                             </div>
                         </div>
                     </div>
+                    <canvas id="canvas" class="w-[100vh] h-[100vh]"></canvas>
                 </div>
             </caption>
         </table>
     </div>
-    <canvas id="canvas" class="w-full h-[75vh]"></canvas>
 </body>
 
 </html>

@@ -1,4 +1,4 @@
-import $, { event } from 'jquery'
+import $ from 'jquery'
 import ical, { CalendarComponent } from 'ical'
 import './index.css'
 
@@ -21,7 +21,7 @@ let autoUpdateInterval: NodeJS.Timer | undefined
 export let events: CalendarComponent[]
 let filename: string | number | string[] = ""
 enum Mode { None, Today, Week, Clock }
-let mode = Mode.None;
+let mode = Mode.None;[]
 const periods = [...Array(8).keys()].map(period => period + 1)
 export const timeFormat: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: 'numeric', hour12: true }
 let timeOffset: number = 0
@@ -46,9 +46,16 @@ export const minutesSinceMidnight = (date: Date | undefined = undefined) => {
     date ??= correctDate()
     return date.getHours() * 60 + date.getMinutes()
 }
-const secondsSinceMidnight = (date: Date | undefined = undefined) => {
+export const secondsSinceMidnight = (date: Date | undefined = undefined) => {
     date ??= correctDate()
     return date.getHours() * 3600 + date.getMinutes() * 60 + date.getSeconds()
+}
+export const millisecondsSinceMidnight = (date: Date | undefined = undefined) => {
+    date ??= correctDate()
+    return date.getHours() * 3600000
+        + date.getMinutes() * 60000
+        + date.getSeconds() * 1000
+        + date.getMilliseconds()
 }
 export const eventToClass = (event: ical.CalendarComponent): ClassData => {
     const summaryRegex = /.+: ((((Yr \d+)|(Rec)) ([^(\n]+))|(\d+'s [a-zA-Z]+))./
@@ -353,7 +360,7 @@ synchroniseButton.on('click', (): void => {
         - Math.abs(b.getTime() - correctDate().getTime())
     )[0]
     timeOffsetInput.val(secondsSinceMidnight(closestBell) - secondsSinceMidnight(new Date()))
-    timeOffsetInput.trigger('change')
+    timeOffsetInput.trigger('input')
 })
 autoUpdateCheckbox.on('change', (): void => {
     if (autoUpdateCheckbox.prop('checked')) {
@@ -397,8 +404,8 @@ if (localStorage.getItem('autoUpdate') === 'true') {
 }
 if (localStorage.getItem('timeOffset')) {
     timeOffsetInput.val(localStorage.getItem('timeOffset')!)
-    timeOffsetInput.trigger('change')
     timeOffset = parseFloat(localStorage.getItem('timeOffset')!)
+    timeOffsetInput.trigger('change')
 }
 
 update()
