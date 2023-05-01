@@ -21,7 +21,7 @@ let autoUpdateInterval: NodeJS.Timer | undefined
 export let events: CalendarComponent[]
 let filename: string | number | string[] = ""
 enum Mode { None, Today, Week, Clock }
-let mode = Mode.None;[]
+let mode = Mode.None;
 const periods = [...Array(8).keys()].map(period => period + 1)
 export const timeFormat: Intl.DateTimeFormatOptions = { hour: 'numeric', minute: 'numeric', hour12: true }
 let timeOffset: number = 0
@@ -359,7 +359,7 @@ synchroniseButton.on('click', (): void => {
         Math.abs(a.getTime() - correctDate().getTime())
         - Math.abs(b.getTime() - correctDate().getTime())
     )[0]
-    timeOffsetInput.val(secondsSinceMidnight(closestBell) - secondsSinceMidnight(new Date()))
+    timeOffsetInput.val((millisecondsSinceMidnight(closestBell) - millisecondsSinceMidnight(new Date())) / 1000)
     timeOffsetInput.trigger('input')
 })
 autoUpdateCheckbox.on('change', (): void => {

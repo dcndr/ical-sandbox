@@ -1,7 +1,7 @@
 import { CalendarComponent } from 'ical'
 import $ from 'jquery'
 import { Container, Graphics, HTMLText, HTMLTextStyle, LINE_CAP, LINE_JOIN, Point, Ticker, autoDetectRenderer } from 'pixi.js'
-import { ClassData, bellsToday, correctDate, eventToClass, eventsToday, minutesSinceMidnight, secondsSinceMidnight, timeFormat } from './times'
+import { ClassData, bellsToday, correctDate, eventToClass, eventsToday, millisecondsSinceMidnight, minutesSinceMidnight, timeFormat } from './times'
 
 const canvas: JQuery<HTMLCanvasElement> = $("#canvas")
 const renderer = autoDetectRenderer(
@@ -170,6 +170,6 @@ ticker.add(() => {
     dayHand.rotation = dateToAngle(correctDate())
     const previousBell = bellsToday().filter(bell => bell < correctDate()).slice(-1)[0]
     const nextBell = bellsToday().filter(bell => bell > correctDate())[0]
-    periodHand.rotation = ((secondsSinceMidnight() - secondsSinceMidnight(previousBell)) * 2 * Math.PI)
-        / (secondsSinceMidnight(nextBell) - secondsSinceMidnight(previousBell))
+    periodHand.rotation = ((millisecondsSinceMidnight() - millisecondsSinceMidnight(previousBell)) * 2 * Math.PI)
+        / (millisecondsSinceMidnight(nextBell) - millisecondsSinceMidnight(previousBell))
 })
