@@ -164,10 +164,12 @@ const updateHeaders = (): void => {
 const dataToEvents = (data: string): CalendarComponent[] => {
     if (calendar === undefined)
         calendar = ical.parseICS(data)
-    const events = Object.entries(calendar)
-        .filter(entry => getWeekNumber(new Date(entry[1].start!)) == getWeekNumber(correctDate()))
-        .map(entry => entry[1])
-    return events
+    let eventsThisWeek = events;
+    if (events.some(event => getWeekNumber(correctDate(new Date(event.start!))) != getWeekNumber(correctDate())))
+        eventsThisWeek = Object.entries(calendar)
+            .filter(entry => getWeekNumber(new Date(entry[1].start!)) == getWeekNumber(correctDate()))
+            .map(entry => entry[1])
+    return eventsThisWeek
 }
 const getWeekNumber = (date: Date): number => {
     date = correctDate(new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate())));
