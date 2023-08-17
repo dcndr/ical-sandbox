@@ -1,8 +1,8 @@
-# SchoolScout Dynamic Timetable View
+# iCal Sandbox
+Display iCal files in a list and live countdown clock.
+School-oriented (specifically Sentral Education timetables) however can be used for other purposes with some changes.
 
-Development of a part of SchoolScout. The **Dynamic Timetable View** reads `.ics` calendar files.
-
-## Running the project
+## Running the Project
 
 ### Prerequisites
 
